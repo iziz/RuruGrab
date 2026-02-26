@@ -1,0 +1,63 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "UtubeHolic",
+  "version": "0.1.0",
+  "identifier": "com.utubeholic",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "devUrl": "http://localhost:5173",
+    "frontendDist": "../build/frontend"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "splashscreen",
+        "title": "UtubeHolic",
+        "url": "/splashscreen.html",
+        "resizable": false,
+        "skipTaskbar": true,
+        "decorations": false,
+        "resizable": false,
+        "alwaysOnTop": true,
+        "transparent": false,
+        "shadow": true,
+        "skipTaskbar": true,
+        "center": true,
+        "width": 420,
+        "height": 280,
+        "backgroundColor": "#0f172a"
+      },
+      {
+        "title": "UtubeHolic",
+        "width": 1100,
+        "height": 720,
+        "resizable": true,
+        "label": "main",
+        "create": false,
+        "visible": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' asset: data: https: http: blob:; style-src media-src 'self' 'unsafe-inline'; script-src 'self'; connect-src http://127.0.0.1:5000 ws://127.0.0.1:5000 'self';"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "resources/UtubeHolic.ico"
+    ],
+    "externalBin": [
+      "../binaries/yt-dlp",
+      "../binaries/ffmpeg",
+      "../binaries/ffprobe",
+      "../binaries/gallery-dl"
+    ]
+  },
+  "plugins": {
+    "shell": {
+      "open": ".*"
+    }
+  }
+}

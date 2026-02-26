@@ -1,0 +1,62 @@
+/* content.css - Watched marker styles (no pseudo-element collisions)
+  Some cards on the hashtag (#hashtag) page (especially view-model-based thumbnails)
+  draw the thumbnail image using pseudo-elements like `::before`.
+
+  Implementing the watched overlay as a `::before` pseudo-element could overwrite YouTube's thumbnail pseudo-element,
+  causing the thumbnail to appear ‘blacked out’.
+  Therefore, we default to a “filter-based dim” instead of using a pseudo-element overlay here.
+
+  To avoid affecting the layout, the badge is inserted into the DOM only *if the parent is already positioned (position != static)*.
+*/
+
+:root {
+  --yt-dlp-dim-brightness: 0.9; /* 0–1, lower values indicate darker shades */
+  --yt-dlp-badge-radius: 999px;
+}
+
+/* ----------------- Dim (safe) ----------------- */
+.yt-dlp-watched :is(
+  a#thumbnail,
+  #thumbnail,
+  ytd-thumbnail,
+  yt-thumbnail-view-model,
+  .shortsLockupViewModelHostThumbnailParentContainerRounded,
+  .shortsLockupViewModelHostThumbnailParentContainer,
+  a.reel-item-endpoint,
+  .yt-lockup-view-model-wiz__content-image,
+  a.yt-lockup-view-model-wiz__content-image
+) {
+  filter: brightness(var(--yt-dlp-dim-brightness));
+}
+
+.yt-dlp-watched :is(
+  a#thumbnail img,
+  #thumbnail img,
+  ytd-thumbnail img,
+  yt-thumbnail-view-model img,
+  .shortsLockupViewModelHostThumbnailParentContainerRounded img,
+  .shortsLockupViewModelHostThumbnailParentContainer img,
+  a.reel-item-endpoint img,
+  yt-img-shadow img,
+  .yt-core-image
+) {
+  filter: brightness(var(--yt-dlp-dim-brightness));
+}
+
+/* ----------------- Dim (fallback) -----------------
+  Some view-model/Shorts cards (especially recommended Shorts on the watch page) render thumbnails as shadows/pseudo elements,
+  so the “thumbnail candidate” selector may not match.
+  Only in this case should the renderer itself be dimmed (text may also be dimmed).
+*/
+.yt-dlp-watched:where(
+  yt-lockup-view-model,
+  ytd-lockup-view-model,
+  yt-shorts-lockup-view-model,
+  ytd-shorts-lockup-view-model,
+  ytm-shorts-lockup-view-model,
+  ytm-shorts-lockup-view-model-v2,
+  ytm-shorts-lockup-view-model-v3
+) {
+  filter: brightness(var(--yt-dlp-dim-brightness));
+}
+

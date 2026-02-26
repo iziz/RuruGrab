@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UtubeHolic</title>
+  <style>
+    :root { 
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .card {
+      width: 100%;
+      height: 100%;
+      padding: 30px;
+      background: rgba(30, 41, 59, 0.85);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .title {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin: 0 0 12px;
+      color: #fff;
+    }
+
+    .sub {
+      font-size: 13px;
+      line-height: 1.6;
+      margin: 0 0 20px;
+      color: rgba(226, 232, 240, 0.8);
+      word-break: keep-all;
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #22c55e;
+      animation: pulse 1.5s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(34,197,94,0.7); }
+      70%  { box-shadow: 0 0 0 10px rgba(34,197,94,0); }
+      100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+    }
+
+    .hint {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      font-size: 11px;
+      color: rgba(226, 232, 240, 0.5);
+      letter-spacing: 0.5px;
+    }
+
+    .loading-text {
+      font-size: 13px;
+      font-weight: 500;
+      color: #22c55e;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="title">RuruGrab</div>
+    <p class="sub">RuruGrab is a browser-integrated media solution consisting of a Chrome/Edge Extension and a Core App. It enables seamless Image & Video downloads from major social platforms and provides a Cross-browser YouTube Watch History sync and marking system.</p>
+    
+    <div class="row">
+      <span class="dot" aria-hidden="true"></span>
+      <div class="loading-text">System Initializing...</div>
+    </div>
+    
+    <div class="hint">powered by ohtalk.me</div>
+  </div>
+</body>
+</html>

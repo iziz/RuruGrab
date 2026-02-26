@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>UtubeHolic Settings</title>
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <main class="wrap">
+
+    <!-- ── Header ── -->
+    <header class="top">
+      <div class="logoArea">
+        <img src="./icons/icon48.png"> 
+        <div>
+          <h1>UtubeHolic</h1>
+          <p class="headSub">Settings</p>
+        </div>
+      </div>
+    </header>
+
+    <section class="card">
+      <div class="sectionTag"><span class="sectionDot"></span>Badge Settings</div>
+      <div class="cardHead">
+        <div class="cardTitleBlock">
+          <h2>Watched Record Badge</h2>
+          <p class="help">Adjust badge text and background, text, and border colors (including alpha). Changes will be reflected immediately in the open YouTube tab when saved.</p>
+        </div>
+        <div class="previewDock">
+          <span class="statLabel">Preview</span>
+          <span id="badgePreview" class="badgePreview">WATCHED</span>
+        </div>
+      </div>
+
+      <div class="form">
+        <div class="formRow">
+          <label class="label" for="badgeText">Text</label>
+          <input type="text" id="badgeText" placeholder="WATCHED" />
+        </div>
+
+        <div class="formRow">
+          <span class="label">Color</span>
+          <div class="colorStack">
+
+            <div class="colorRow">
+              <span class="labelSm">Background</span>
+              <div class="colorCtl">
+                <input type="color" id="badgeBgColor" aria-label="Badge background color" />
+                <input type="range" id="badgeBgAlpha" min="0" max="100" step="1" aria-label="Badge Background Opacity" />
+                <span class="monoTag" id="badgeBgRgba">—</span>
+              </div>
+            </div>
+
+            <div class="colorRow">
+              <span class="labelSm">Text</span>
+              <div class="colorCtl">
+                <input type="color" id="badgeTextColor" aria-label="Badge text color" />
+                <input type="range" id="badgeTextAlpha" min="0" max="100" step="1" aria-label="Badge text opacity" />
+                <span class="monoTag" id="badgeTextRgba">—</span>
+              </div>
+            </div>
+
+            <div class="colorRow">
+              <span class="labelSm">Border</span>
+              <div class="colorCtl">
+                <input type="color" id="badgeBorderColor" aria-label="Badge border color" />
+                <input type="range" id="badgeBorderAlpha" min="0" max="100" step="1" aria-label="Badge border opacity" />
+                <span class="monoTag" id="badgeBorderRgba">—</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <span id="saveStatus" class="saveStatus" aria-live="polite"></span>
+        <button id="saveBtn" class="primary">Save</button>
+      </div>
+    </section>
+
+
+    <section class="card">
+      <div class="sectionTag"><span class="sectionDot"></span>Data Management</div>
+      <div class="cardHead">
+        <div class="cardTitleBlock">
+          <h2>Migration &amp; Backup</h2>
+          <p class="help">You can import browser/YouTube watch history or export it as a JSON file.</p>
+        </div>
+        <div class="statBadge">
+          <span class="statLabel">Saved items</span>
+          <span class="statValue" id="countVal">—</span>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <!-- Import -->
+        <div class="panel">
+          <h3>Import</h3>
+
+          <div class="btnRow">
+            <button id="importHistoryAllBtn">Browser History</button>
+            <label class="check muted" for="historyIncludeShorts">
+              <input type="checkbox" id="historyIncludeShorts" />
+              <span>Include Shorts</span>
+            </label>
+          </div>
+          <p class="helpNote">Scans the entire browser history and adds matches to the DB.</p>
+
+          <div class="btnRow">
+            <button id="importYouTubeHistoryBtn">YouTube Watch History</button>
+          </div>
+          <p class="helpNote">Automatically scrolls the YouTube Watch History page to collect all videos. The more history you have, the longer it takes.</p>
+        </div>
+
+        <!-- Export / Reset -->
+        <div class="panel">
+          <h3>Export / Reset</h3>
+
+          <div class="btnRow">
+            <button id="exportBtn">Export</button>
+          </div>
+          <p class="helpNote">Downloads the current DB as a JSON file.</p>
+
+          <div class="btnRow">
+            <button id="clearBtn" class="danger">Delete All</button>
+          </div>
+          <p class="helpNote">Removes all watch history stored by this extension.</p>
+        </div>
+      </div>
+
+      <div class="logWrap">
+        <p class="logLabel">Activity Log</p>
+        <pre id="log" class="log" aria-live="polite"></pre>
+      </div>
+    </section>
+
+
+    <!-- ── SQLite Sync ── -->
+    <section class="card">
+      <div class="sectionTag"><span class="sectionDot"></span>Sync</div>
+      <div class="cardHead">
+        <div class="cardTitleBlock">
+          <h2>SQLite Sync</h2>
+          <p class="help">Sync between local IndexedDB and server-side SQLite. The server (server.py) must be running.</p>
+        </div>
+      </div>
+
+      <div class="form">
+        <div class="formRow">
+          <span class="label">Auto Sync</span>
+          <label class="check" for="sqliteSyncEnabled">
+            <input type="checkbox" id="sqliteSyncEnabled" />
+            <span>Enable</span>
+          </label>
+        </div>
+
+        <div class="formRow">
+          <label class="label" for="sqliteServerUrl">Server URL</label>
+          <input type="text" id="sqliteServerUrl" placeholder="http://127.0.0.1:5000" />
+        </div>
+
+        <div class="formRow">
+          <label class="label" for="sqliteSyncIntervalMin">Sync Interval</label>
+          <div class="inline">
+            <input type="number" id="sqliteSyncIntervalMin" min="1" step="1" style="width:90px;" />
+            <span class="muted">min</span>
+          </div>
+        </div>
+
+        <div class="formRow">
+          <span class="label">Last success</span>
+          <span class="mono muted" id="sqliteLastSuccess">—</span>
+        </div>
+
+        <div class="formRow">
+          <span class="label">Last error</span>
+          <span class="mono muted" id="sqliteLastError">—</span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="sqliteSyncNowBtn" class="primary">Sync Now</button>
+        <button id="sqliteRestoreBtn" class="danger">Restore from SQLite</button>
+        <label class="check muted" for="sqliteRestoreWipe">
+          <input type="checkbox" id="sqliteRestoreWipe" />
+          <span>Wipe IndexedDB before restore</span>
+        </label>
+      </div>
+    </section>
+
+    <!-- ── Footer ── -->
+    <footer class="footer">
+      💡 <strong>from</strong> ohtalk.me
+    </footer>
+
+  </main>
+
+  <script src="db.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

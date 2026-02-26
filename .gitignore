@@ -1,0 +1,5 @@
+﻿.claude
+app/build
+app/node_modules
+*.exe
+app/src-tauri/gen

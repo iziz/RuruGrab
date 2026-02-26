@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>UtubeHolic</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <div id="app">
+
+      <!-- ── Header ── -->
+      <header class="app-header">
+        <h1>UtubeHolic</h1>
+        <span class="version">1.0.0</span>
+      </header>
+
+      <!-- ── Main Tabs ── -->
+      <nav class="tab-bar">
+        <button class="tab-btn active" data-tab="server">Environment</button>
+        <button class="tab-btn" data-tab="downloads">Downloads</button>
+        <button class="tab-btn" data-tab="sqlite">YouTube DB</button>
+      </nav>
+
+      <!-- ══════════════════════════════════════════════════════════════
+           TAB 1: Server
+           ══════════════════════════════════════════════════════════════ -->
+      <section id="tab-server" class="tab-panel active">
+
+        <!-- Status -->
+        <div class="card">
+          <div class="card-title">Server Status</div>
+          <div class="status-row">
+            <div class="status-indicator">
+              <span id="statusDot" class="status-dot running"></span>
+              <span id="statusText">RUNNING</span>
+            </div>
+            <span id="statusUrl" class="status-url">http://127.0.0.1:5000</span>
+            <div class="ml-auto flex-row gap-8">
+              <button class="btn btn-default btn-sm" id="btnOpenUrl">Open URL</button>
+              <button class="btn btn-default btn-sm" id="btnCopyUrl">Copy URL</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Paths -->
+        <div class="card">
+          <div class="card-title">Paths</div>
+          <div class="path-grid">
+            <span class="path-label">SQLite DB</span>
+            <span class="path-value" id="pathSqlite">-</span>
+            <button class="btn btn-default btn-sm" id="btnOpenSqlite">Open</button>
+
+            <span class="path-label">Downloads</span>
+            <span class="path-value" id="pathDownloads">-</span>
+            <button class="btn btn-default btn-sm" id="btnOpenDownloads">Open</button>
+          </div>
+        </div>
+
+        <!-- Logs -->
+        <div class="card flex-col flex-1" style="min-height:200px;">
+          <div class="card-title">Logs</div>
+          <div class="log-tabs">
+            <button class="log-tab-btn active" data-log="all">All</button>
+            <button class="log-tab-btn" data-log="access">Access</button>
+            <button class="log-tab-btn" data-log="sync">Sync</button>
+            <button class="log-tab-btn" data-log="download">Download</button>
+            <button class="log-tab-btn" data-log="error">Error</button>
+            <div class="ml-auto">
+              <button class="btn btn-default btn-sm" id="btnClearLogs">Clear</button>
+            </div>
+          </div>
+          <div class="log-container flex-1">
+            <div id="log-all"     class="log-view active"></div>
+            <div id="log-access"  class="log-view"></div>
+            <div id="log-sync"    class="log-view"></div>
+            <div id="log-download" class="log-view"></div>
+            <div id="log-error"   class="log-view"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════════════
+           TAB 2: Downloads
+           ══════════════════════════════════════════════════════════════ -->
+      <section id="tab-downloads" class="tab-panel">
+
+        <!-- Queue input -->
+        <div class="card">
+          <div class="card-title">Add</div>
+          <div class="dl-input-row">
+            <input type="url" id="videoUrl" placeholder="YouTube URL" />
+            <input type="text" id="dlTitle" placeholder="Optional title" />
+            <button class="btn btn-primary" id="btnDownload">Grab</button>
+          </div>
+          <p class="text-xs text-muted" style="margin-top:6px;">Support URL : Youtube, X (Twitter), Instagram</p>
+        </div>
+
+        <!-- Queue info -->
+        <div class="flex-row gap-16">
+          <span class="fw-bold">Queue: <span id="dlQueueSize">0</span></span>
+          <span class="text-muted text-sm">Worker: <span id="dlWorkerAlive">-</span></span>
+        </div>
+
+        <!-- Download list -->
+        <div class="dl-list flex-1" id="dlList">
+          <div class="text-muted" style="padding:20px;text-align:center;">No downloads</div>
+        </div>
+
+        <!-- Current download footer removed -->
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════════════
+           TAB 3: SQLite viewer
+           ══════════════════════════════════════════════════════════════ -->
+      <section id="tab-sqlite" class="tab-panel">
+
+        <div class="card">
+          <div class="card-title">Filter & Stats</div>
+          <div class="sqlite-toolbar">
+            <input type="text" id="sqliteFilter" placeholder="Filter by video id (LIKE)" />
+            <span class="sqlite-count" id="sqliteCount">Rows: -</span>
+          </div>
+        </div>
+
+        <div class="card flex-col flex-1" style="min-height:200px;">
+          <div class="card-title">Watched Videos</div>
+          <div class="sqlite-table-wrap flex-1">
+            <table class="sqlite-table">
+              <thead>
+                <tr>
+                  <th>id</th>
+                  <th>ts (ms)</th>
+                  <th>updated_at (ms)</th>
+                </tr>
+              </thead>
+              <tbody id="sqliteBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </div><!-- #app -->
+
+    <!-- Context menu (shared) -->
+    <div id="ctxMenu" class="ctx-menu">
+      <button class="ctx-menu-item" data-action="cancel">Cancel</button>
+      <button class="ctx-menu-item" data-action="retry">Retry</button>
+      <div class="ctx-menu-sep"></div>
+      <button class="ctx-menu-item" data-action="delete">Delete(from list)</button>
+      <button class="ctx-menu-item danger" data-action="delete-files">Delete(with Files)</button>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
