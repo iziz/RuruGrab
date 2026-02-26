@@ -27,9 +27,8 @@ RuruGrab is a **Chrome / Edge** solution that combines a **browser extension** a
 - Badge text/colors are configurable from the Options page.
 
 ### Optional Sync (SQLite)
-- Sync between **local IndexedDB** (extension) and a **server-side SQLite** store.
+- Sync between **Extension** () and a **Core App**.
 - The extension expects a sync server reachable at `http://127.0.0.1:5000` (default).
-  - You must run a compatible server yourself (the Options UI references a `server.py`, but it is not included in this repository).
 
 ---
 
