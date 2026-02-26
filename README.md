@@ -120,7 +120,3 @@ The extension and core app are configured to communicate with localhost endpoint
 ## License
 MIT License.
 
----
-
-## Disclaimer
-Please respect each platform’s Terms of Service and local laws. This project is provided “as is”.
