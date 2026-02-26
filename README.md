@@ -1,21 +1,121 @@
-# RuruGrab
-1. Short Summary
-RuruGrab is a powerful media downloader and history management solution for Google Chrome and Microsoft Edge.
-It consists of a Browser Extension and a Core App that work together to download media from social platforms and synchronize YouTube watch history across different browsers.
+# RuruGrab (UtubeHolic)
 
-3. Detailed Features
-🚀 Media Downloader
-Multi-Platform Support: Seamlessly download Images and Videos from YouTube, Instagram, and X (formerly Twitter).
+RuruGrab is a **Chrome / Edge** solution that combines a **browser extension** and a **local core app** to:
 
-High-Quality Extraction: Integrated Core App ensures stable and high-speed media processing.
+- Download media from **YouTube / X (Twitter) / Instagram**
+- Track YouTube watch history and show **visual watch marks** on thumbnails
+- Optionally sync watch history across browsers via a **local/SQLite sync** workflow
 
-📊 Smart YouTube History & Sync
-Watch History Tracking: Automatically records your YouTube Viewing Activity in real-time.
+> **Repo layout**
+> - `extension/` — Browser Extension (Manifest V3)
+> - `app/` — Core App (Tauri v2 + Vite)
 
-Visual Watch Marks: Displays a distinct Mark on video thumbnails to identify previously watched content at a glance.
+---
 
-Cross-Browser Synchronization: Supports Internal Sync between Chrome and Edge, providing a consistent watch history across different browsers.
+## Features
 
-🛠 System Architecture
-- Browser Extension : Captures media links and manages the UI on web pages.
-- Core App : Handles the background Data Processing and System Interworking for enhanced performance.
+### Media Downloader
+- Download **images and videos** from:
+  - YouTube
+  - X (formerly Twitter)
+  - Instagram
+- Trigger downloads via extension actions and site-specific integrations.
+
+### Smart YouTube History & Watch Marks
+- Tracks YouTube viewing activity locally.
+- Displays a **WATCHED** badge/mark on thumbnails so you can quickly see what you’ve already watched.
+- Badge text/colors are configurable from the Options page.
+
+### Optional Sync (SQLite)
+- Sync between **Extension** () and a **Core App**.
+- The extension expects a sync server reachable at `http://127.0.0.1:5000` (default).
+
+---
+
+## Architecture
+
+### 1) Browser Extension (`extension/`)
+- **Manifest V3** (`manifest_version: 3`)
+- **Service worker** background: `background.js`
+- **Content scripts** for:
+  - YouTube
+  - X (Twitter)
+  - Instagram
+- Options page: `options.html`
+  - Badge customization
+  - Import/export/reset watch DB
+  - SQLite sync configuration (server URL, interval, manual sync/restore)
+
+> Extension name: **UtubeHolic** (current version in manifest: **2.2.5**)
+
+### 2) Core App (`app/`) — Tauri v2 + Vite
+- Frontend: **Vite**
+- Desktop wrapper: **Tauri v2**
+- External tools (configured as `externalBin` in Tauri):
+  - `yt-dlp`
+  - `ffmpeg`
+  - `ffprobe`
+  - `gallery-dl`
+
+> These binaries are expected under `app/binaries/` (platform-specific executables).
+
+---
+
+## Quick Start (Development)
+
+### Prerequisites
+- Node.js (LTS recommended)
+- Rust toolchain + Tauri prerequisites for your OS
+
+### A) Run the Core App (Tauri)
+```bash
+cd app
+npm install
+npm run tauri dev
+```
+
+Build (no bundle):
+```bash
+cd app
+npm install
+npm run build:exe
+```
+
+### B) Load the Extension (Chrome / Edge)
+1. Open **Extensions**
+2. Enable **Developer mode**
+3. Click **Load unpacked**
+4. Select the `extension/` folder
+
+### C) Configure (Options)
+Open the extension Options page:
+- **Badge Settings** → adjust WATCHED badge text/colors
+- **Migration & Backup** → import/export/reset local DB
+- **SQLite Sync** → set server URL, interval, and run sync/restore
+
+---
+
+## Configuration Notes
+
+### Localhost Connectivity
+The extension and core app are configured to communicate with localhost endpoints (default includes `127.0.0.1:5000`).
+
+### Data Storage & Privacy
+- By default, watch history is stored **locally** in the extension’s storage (IndexedDB).
+- If you enable **SQLite Sync**, watch history will be sent to the server you configure.
+
+---
+
+## Repository Layout
+
+```
+.
+├─ extension/   # Browser extension (MV3)
+└─ app/         # Tauri v2 desktop core app (Vite + Rust)
+```
+
+---
+
+## License
+MIT License.
+
