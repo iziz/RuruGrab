@@ -6,6 +6,8 @@ RuruGrab is a **Chrome / Edge** solution that combines a **browser extension** a
 
 - Download media from **YouTube / X (Twitter) / Instagram**
 - Track YouTube watch history and show **visual watch marks** on thumbnails
+- Batch rename files with **rule-based filename transforms**
+- Batch move files into folders based on **filename rules**
 - Optionally sync watch history across browsers via a **local/SQLite sync** workflow
 
 > **Repo layout**
@@ -21,6 +23,11 @@ RuruGrab is a **Chrome / Edge** solution that combines a **browser extension** a
   - X (formerly Twitter)
   - Instagram
 - Trigger downloads via extension actions and site-specific integrations.
+
+### Rule-Based File Organizer
+- Batch rename files using **rule-based filename transforms**.
+- Batch move files into folders based on **filename rules**.
+- Useful for post-download cleanup, naming normalization, and library organization.
 
 ### Smart YouTube History & Watch Marks
 - Tracks YouTube viewing activity locally.
@@ -96,6 +103,15 @@ Open the extension Options page:
 - **Badge Settings** → adjust WATCHED badge text/colors
 - **Migration & Backup** → import/export/reset local DB
 - **SQLite Sync** → set server URL, interval, and run sync/restore
+
+## File Organization Workflow
+
+A typical workflow in RuruGrab is:
+1. Download media from supported sites
+2. Apply **rule-based batch renaming** to normalize filenames
+3. Apply **rule-based folder moves** to sort files into matching directories
+
+This makes it easier to keep downloaded media organized without manual file-by-file cleanup.
 
 
 ## Configuration Notes
