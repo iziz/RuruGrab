@@ -465,12 +465,42 @@ input:focus {
   flex-shrink: 0;
 }
 
-.tag-youtube { background: linear-gradient(135deg, #FF0000 0%, #CC0000 100%); box-shadow: 0 1px 3px rgba(255,0,0,0.3); }
-.tag-instagram { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); box-shadow: 0 1px 3px rgba(220,39,67,0.3); }
-.tag-x { background: #0F1419; color: #E7E9EA; border: 1px solid #333639; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.5); }
-.tag-pinterest { background: #E60023; box-shadow: 0 1px 3px rgba(230,0,35,0.3); }
-.tag-tiktok { background: #000; color: #fff; border: 1px solid #333; text-shadow: 1px 1px 0 #25F4EE, -1px -1px 0 #FE2C55; box-shadow: 0 1px 3px rgba(0,0,0,0.5); }
-.tag-other { background: var(--bg-elevated); color: var(--text-muted); border: 1px solid var(--border); }
+.tag-youtube {
+  background: linear-gradient(135deg, #FF0000 0%, #CC0000 100%);
+  box-shadow: 0 1px 3px rgba(255, 0, 0, 0.3);
+}
+
+.tag-instagram {
+  background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+  box-shadow: 0 1px 3px rgba(220, 39, 67, 0.3);
+}
+
+.tag-x {
+  background: #0F1419;
+  color: #E7E9EA;
+  border: 1px solid #333639;
+  font-weight: 900;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.tag-pinterest {
+  background: #E60023;
+  box-shadow: 0 1px 3px rgba(230, 0, 35, 0.3);
+}
+
+.tag-tiktok {
+  background: #000;
+  color: #fff;
+  border: 1px solid #333;
+  text-shadow: 1px 1px 0 #25F4EE, -1px -1px 0 #FE2C55;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.tag-other {
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
 
 .dl-title {
   font-size: 14px;
@@ -778,4 +808,363 @@ table.sqlite-table tr:hover {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
+}
+
+/* ── Organizer tab layout ──────────────────────────────────────────────── */
+.organizer-panel {
+  display: none;
+  flex-direction: row !important;
+  gap: 16px;
+  overflow: hidden;
+}
+
+.organizer-panel.active {
+  display: flex !important;
+}
+
+.org-left {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.org-right {
+  flex: 7;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.org-right .card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.org-right .preview-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.org-right .sqlite-table-wrap {
+  flex: 1;
+}
+
+/* ── ReNamer tab layout ────────────────────────────────────────────────── */
+.renamer-panel {
+  display: none;
+  flex-direction: column !important;
+  overflow: hidden;
+}
+
+.renamer-panel.active {
+  display: flex !important;
+}
+
+/* ── Preview table (shared Organizer + ReNamer) ────────────────────────── */
+table.preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+table.preview-table th {
+  background: var(--bg-elevated);
+  color: var(--text);
+  font-weight: 700;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+table.preview-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  user-select: text;
+}
+
+table.preview-table tr:hover {
+  background: rgba(0, 122, 204, 0.08);
+}
+
+table.preview-table tr.selected>td {
+  background: rgba(0, 122, 204, 0.15);
+}
+
+/* Organizer preview tree */
+.group-header-row td {
+  background: var(--bg-elevated);
+  font-weight: 700;
+  padding: 8px 10px;
+}
+
+.folder-icon {
+  margin-right: 6px;
+}
+
+.dest-path {
+  color: var(--accent);
+}
+
+.group-count {
+  margin-left: 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.file-entry {
+  display: flex;
+  align-items: center;
+  padding-left: 28px;
+  position: relative;
+}
+
+.file-entry::before {
+  content: '├';
+  position: absolute;
+  left: 10px;
+  color: var(--border);
+  font-family: monospace;
+}
+
+.file-entry.is-last::before {
+  content: '└';
+}
+
+.file-name {
+  color: var(--text);
+}
+
+/* ── status-dot ready ──────────────────────────────────────────────────── */
+.status-dot.ready {
+  background: var(--accent);
+  box-shadow: 0 0 5px var(--accent);
+}
+
+/* ── ReNamer rule meta badges ──────────────────────────────────────────── */
+.rule-meta {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.meta-badge {
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.rule-pattern-main {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+/* regex highlight spans */
+.rx-meta {
+  color: #C586C0;
+}
+
+.rx-esc {
+  color: #D7BA7D;
+}
+
+.rx-group {
+  color: #FFD700;
+  font-weight: bold;
+}
+
+.rx-class {
+  color: #9CDCFE;
+}
+
+.rx-quant {
+  color: #4EC9B0;
+}
+
+.rx-preview-box {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  min-height: 20px;
+  padding: 4px 8px;
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  word-break: break-all;
+}
+
+.rx-test-result {
+  padding: 4px 8px;
+  background: var(--bg-base);
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  min-height: 20px;
+}
+
+/* ── Modal ─────────────────────────────────────────────────────────────── */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal.hidden {
+  display: none !important;
+}
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.modal-card {
+  position: relative;
+  z-index: 1;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 24px;
+  width: 480px;
+  max-width: 95vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+}
+
+.modal-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.modal-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Form fields ───────────────────────────────────────────────────────── */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field span {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.field input:not([type="radio"]):not([type="checkbox"]),
+.field select {
+  width: 100%;
+}
+
+.field-row {
+  display: flex;
+  gap: 12px;
+}
+
+.field-row .field {
+  flex: 1;
+}
+
+.select {
+  background: var(--bg-base);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 7px 10px;
+  font-size: 13px;
+  font-family: var(--font-sans);
+  outline: none;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+/* ── Drag-over highlight ───────────────────────────────────────────────── */
+.drag-over {
+  outline: 2px dashed var(--accent);
+  outline-offset: -2px;
+}
+
+/* ── Spacing helpers ───────────────────────────────────────────────────── */
+.mt-4 {
+  margin-top: 4px;
+}
+
+.mt-8 {
+  margin-top: 8px;
+}
+
+.mt-10 {
+  margin-top: 10px;
+}
+
+.mt-12 {
+  margin-top: 12px;
+}
+
+.mt-24 {
+  margin-top: 24px;
+}
+
+.mb-8 {
+  margin-bottom: 8px;
+}
+
+.gap-6 {
+  gap: 6px;
+}
+
+/* ── Rules table: wrap text, vertical scroll only ──────────────────────── */
+#renRulesWrap {
+  overflow-x: hidden;
+  overflow-y: auto;
+  min-height: calc(3 * 58px);
+  /* 최소 3행 보장 */
+  flex: 1;
+}
+
+#renRulesWrap table.preview-table {
+  width: 100%;
+}
+
+#renRulesWrap table.preview-table td,
+#renRulesWrap table.preview-table th {
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  vertical-align: top;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+#renRulesWrap table.preview-table td:first-child,
+#renRulesWrap table.preview-table th:first-child {
+  vertical-align: middle;
+  text-align: center;
 }

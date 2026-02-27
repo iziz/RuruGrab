@@ -1,5 +1,6 @@
 import { listen } from '@tauri-apps/api/event'
 import { invoke, convertFileSrc } from '@tauri-apps/api/core'
+import { open as openFileDialog } from '@tauri-apps/plugin-dialog'
 
 // Config / Environment
 const isTauri =
@@ -10,8 +11,8 @@ const isTauri =
 const API = isTauri
   ? 'http://127.0.0.1:5000'
   : (window.location.origin === 'http://localhost:5173'
-      ? 'http://127.0.0.1:5000'
-      : window.location.origin)
+    ? 'http://127.0.0.1:5000'
+    : window.location.origin)
 
 // Thumbnail cache
 const thumbSrcCache = new Map() // key: raw string -> converted src
@@ -248,12 +249,12 @@ function humanBytes(n) {
 function formatTime(secs) {
   const s = Number(secs)
   if (!Number.isFinite(s) || s <= 0) return ''
-  if (s < 60) return `${Math.floor(s)}초`
+  if (s < 60) return `${Math.floor(s)}s`
   const m = Math.floor(s / 60)
   const ss = Math.floor(s % 60)
-  if (m < 60) return `${m}분 ${ss}초`
+  if (m < 60) return `${m}m ${ss}s`
   const h = Math.floor(m / 60)
-  return `${h}시간 ${m % 60}분`
+  return `${h}h ${m % 60}m`
 }
 
 function normStatus(s) {
@@ -393,7 +394,7 @@ function buildProgressText(row, st, pct, totalBytes, downloadedBytes) {
   const total = Number(totalBytes)
   const dl = Number(downloadedBytes)
   if (Number.isFinite(dl) && dl > 0 && Number.isFinite(total) && total > 0) {
-    parts.push(`${humanBytes(total)} 중 ${humanBytes(dl)}`)
+    parts.push(`${humanBytes(dl)} of ${humanBytes(total)}`)
   } else if (Number.isFinite(total) && total > 0) {
     parts.push(humanBytes(total))
   }
@@ -955,7 +956,7 @@ $('#btnClearLogs')?.addEventListener('click', () => {
 
 $('#btnOpenUrl')?.addEventListener('click', () => openPath(API))
 $('#btnCopyUrl')?.addEventListener('click', () => {
-  navigator.clipboard.writeText(API).catch(() => {})
+  navigator.clipboard.writeText(API).catch(() => { })
   appendGuiLog('[GUI] URL copied to clipboard')
 })
 
@@ -977,7 +978,7 @@ if (dom.videoUrl) {
 }
 
 // Tauri event listeners
-;(async () => {
+; (async () => {
   try {
     await listen('utubeholic:log', (e) => {
       if (typeof e.payload === 'string') appendLog(e.payload)
@@ -992,9 +993,613 @@ if (dom.videoUrl) {
 
 // Polling fallback
 setInterval(() => {
-  refreshStatus().catch(() => {})
+  refreshStatus().catch(() => { })
 }, 2000)
 
 // Initial load
 loadLogs(2000)
 refreshStatus()
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Organizer
+// ─────────────────────────────────────────────────────────────────────────────
+const org = {
+  statusDot: $('#orgStatusDot'),
+  statusText: $('#orgStatusText'),
+  statusPath: $('#orgStatusPath'),
+  btnPickFolder: $('#orgBtnPickFolder'),
+  btnScan: $('#orgBtnScan'),
+  btnRun: $('#orgBtnRun'),
+  summary: $('#orgSummary'),
+  progressFill: $('#orgProgressFill'),
+  progressText: $('#orgProgressText'),
+  progressFile: $('#orgProgressFile'),
+  previewBody: $('#orgPreviewBody'),
+  regex: $('#orgRegex'),
+}
+
+let organizerFolder = null
+
+function orgGetCollision() {
+  const el = document.querySelector('input[name="orgCollision"]:checked')
+  return el ? el.value : 'suffix'
+}
+
+function orgSetStatus(mode, text) {
+  if (org.statusText) org.statusText.textContent = text
+  if (!org.statusDot) return
+  org.statusDot.classList.remove('running', 'stopped', 'ready')
+  if (mode === 'running' || mode === 'done') org.statusDot.classList.add('running')
+  else if (mode === 'ready') org.statusDot.classList.add('ready')
+  else org.statusDot.classList.add('stopped')
+}
+
+function orgSetBusy(b) {
+  for (const el of [org.btnPickFolder, org.btnScan, org.btnRun]) {
+    if (el) el.disabled = b
+  }
+}
+
+function orgSetProgress(done, total, filename) {
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0
+  if (org.progressFill) org.progressFill.style.width = `${pct}%`
+  if (org.progressText) org.progressText.textContent = `${done} / ${total}`
+  if (org.progressFile) org.progressFile.textContent = filename ? ` • ${filename}` : ''
+}
+
+function orgEscapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, (c) => {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[c] || c
+  })
+}
+
+function orgRenderPreview(result) {
+  if (!org.previewBody) return
+  if (!result.groups || result.groups.length === 0) {
+    org.previewBody.innerHTML = `<tr><td class="text-muted">No matching files found.</td></tr>`
+    return
+  }
+  const rows = []
+  for (const g of result.groups) {
+    const destDir = g.files.length > 0 ? g.files[0].to.replace(/[/\\][^/\\]+$/, '') : g.prefix
+    rows.push(`<tr class="group-header-row"><td>
+      <span class="folder-icon">📁</span>
+      <span class="dest-path">${orgEscapeHtml(destDir)}</span>
+      <span class="group-count">${g.files.length} items</span>
+    </td></tr>`)
+    for (let i = 0; i < g.files.length; i++) {
+      const f = g.files[i]
+      const isLast = i === g.files.length - 1
+      rows.push(`<tr class="file-row"><td>
+        <div class="file-entry${isLast ? ' is-last' : ''}">
+          <span class="file-name">${orgEscapeHtml(f.name)}</span>
+        </div>
+      </td></tr>`)
+    }
+  }
+  org.previewBody.innerHTML = rows.join('')
+}
+
+async function orgPickFolder() {
+  const selected = await openFileDialog({ directory: true, multiple: false })
+  if (!selected || Array.isArray(selected)) return
+  organizerFolder = selected
+  if (org.statusPath) org.statusPath.textContent = selected
+  if (org.previewBody) org.previewBody.innerHTML = `<tr><td class="text-muted">Scanning...</td></tr>`
+  orgSetProgress(0, 0, '')
+  await orgScan()
+}
+
+async function orgScan() {
+  if (!organizerFolder) {
+    if (org.summary) org.summary.textContent = 'Please select a folder first.'
+    orgSetStatus('error', 'ERROR')
+    return
+  }
+  orgSetBusy(true)
+  orgSetStatus('running', 'SCANNING')
+  if (org.summary) org.summary.textContent = 'Scanning...'
+  try {
+    const result = await invoke('scan_folder', {
+      folder: organizerFolder,
+      regexStr: org.regex ? org.regex.value : '^([A-Za-z0-9]{2,8})-(.+)'
+    })
+    orgRenderPreview(result)
+    if (org.summary) org.summary.textContent = `Total: ${result.totalFiles} files / Matched: ${result.matchedFiles} / Groups: ${result.groups.length}`
+    orgSetStatus('done', 'READY')
+  } catch (e) {
+    if (org.summary) org.summary.textContent = `Scan failed: ${String(e)}`
+    orgSetStatus('error', 'ERROR')
+  } finally {
+    orgSetBusy(false)
+  }
+}
+
+async function orgRunMove() {
+  if (!organizerFolder) {
+    if (org.summary) org.summary.textContent = 'Please select a folder first.'
+    orgSetStatus('error', 'ERROR')
+    return
+  }
+  orgSetBusy(true)
+  orgSetStatus('running', 'RUNNING')
+  if (org.summary) org.summary.textContent = 'Running...'
+  orgSetProgress(0, 0, '')
+  try {
+    await invoke('start_move', {
+      folder: organizerFolder,
+      collision: orgGetCollision(),
+      regexStr: org.regex ? org.regex.value : '^([A-Za-z0-9]{2,8})-(.+)'
+    })
+  } catch (e) {
+    if (org.summary) org.summary.textContent = `Execution failed: ${String(e)}`
+    orgSetStatus('error', 'ERROR')
+    orgSetBusy(false)
+  }
+}
+
+org.btnPickFolder?.addEventListener('click', () => void orgPickFolder())
+org.btnScan?.addEventListener('click', () => void orgScan())
+org.btnRun?.addEventListener('click', () => void orgRunMove())
+
+await listen('organizer:move_progress', (event) => {
+  const p = event.payload
+  orgSetProgress(p.done, p.total, p.filename)
+})
+await listen('organizer:move_finished', (event) => {
+  const r = event.payload
+  if (org.summary) org.summary.textContent = `Done: moved=${r.moved}, skipped=${r.skipped}, failed=${r.failed}, folders=${r.createdFolders}`
+  orgSetStatus(r.failed > 0 ? 'error' : 'done', 'READY')
+  orgSetBusy(false)
+})
+await listen('organizer:log', (event) => {
+  if (org.summary) org.summary.textContent = event.payload.message
+})
+
+orgSetStatus('ready', 'READY')
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ReNamer
+// ─────────────────────────────────────────────────────────────────────────────
+const ren = {
+  statusDot: $('#renStatusDot'),
+  statusText: $('#renStatusText'),
+  rulesBody: $('#renRulesBody'),
+  targetsBody: $('#renTargetsBody'),
+  btnRuleAdd: $('#renRuleAdd'),
+  btnRuleEdit: $('#renRuleEdit'),
+  btnRuleRemove: $('#renRuleRemove'),
+  btnRuleUp: $('#renRuleUp'),
+  btnRuleDown: $('#renRuleDown'),
+  btnAddFiles: $('#renAddFiles'),
+  btnAddFolder: $('#renAddFolder'),
+  btnRemove: $('#renRemove'),
+  btnClear: $('#renClear'),
+  btnRename: $('#renRename'),
+  btnSettingsSave: $('#btnRenSettingsSave'),
+  summary: $('#renSummary'),
+  testStr: $('#renGlobalTestStr'),
+  testRes: $('#renGlobalTestRes'),
+  modal: $('#renRuleModal'),
+  modalBackdrop: $('#renRuleModalBackdrop'),
+  modalTitle: $('#renRuleModalTitle'),
+  modalName: $('#renRuleName'),
+  modalPattern: $('#renRulePattern'),
+  modalReplace: $('#renRuleReplace'),
+  modalApplyTo: $('#renRuleApplyTo'),
+  modalCase: $('#renRuleCase'),
+  modalWhen: $('#renRuleWhenContains'),
+  modalIcase: $('#renRuleContainsIcase'),
+  modalTestStr: $('#renRuleTestStr'),
+  modalTestRes: $('#renRuleTestResult'),
+  modalPatternPreview: $('#renRulePatternPreview'),
+  modalCancel: $('#renRuleCancel'),
+  modalSave: $('#renRuleSave'),
+}
+
+let renRules = []
+let renTargets = []
+let renPreview = []
+let renResults = []
+let selectedRuleIndex = null
+let selectedTargetIdx = new Set()
+let modalMode = 'add'
+
+function renEscapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, (c) => {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[c] || c
+  })
+}
+
+function renHighlightRegex(pattern) {
+  if (!pattern) return ''
+  const html = renEscapeHtml(pattern)
+  return html
+    .replace(/\\[dswbDSWB]/g, (m) => `<span class="rx-meta">${m}</span>`)
+    .replace(/\\./g, (m) => `<span class="rx-esc">${m}</span>`)
+    .replace(/[()]/g, (m) => `<span class="rx-group">${m}</span>`)
+    .replace(/[\[\]]/g, (m) => `<span class="rx-class">${m}</span>`)
+    .replace(/[*+?{}]/g, (m) => `<span class="rx-quant">${m}</span>`)
+    .replace(/[\^$]/g, (m) => `<span class="rx-meta">${m}</span>`)
+}
+
+function renBasename(p) {
+  const parts = String(p ?? '').split(/[/\\]+/)
+  return parts[parts.length - 1] ?? p
+}
+
+function renSetStatus(mode, text) {
+  if (ren.statusText) ren.statusText.textContent = text
+  if (!ren.statusDot) return
+  ren.statusDot.classList.remove('running', 'stopped', 'ready')
+  if (mode === 'running') ren.statusDot.classList.add('running')
+  else if (mode === 'ready') ren.statusDot.classList.add('ready')
+  else ren.statusDot.classList.add('stopped')
+}
+
+function renSetBusy(b) {
+  for (const el of [
+    ren.btnRuleAdd, ren.btnRuleEdit, ren.btnRuleRemove, ren.btnRuleUp, ren.btnRuleDown,
+    ren.btnAddFiles, ren.btnAddFolder, ren.btnRemove, ren.btnClear, ren.btnRename,
+    ren.btnSettingsSave,
+  ]) { if (el) el.disabled = b }
+}
+
+function renRenderRules() {
+  if (!ren.rulesBody) return
+  if (renRules.length === 0) {
+    ren.rulesBody.innerHTML = `<tr><td colspan="4" class="text-muted">No rules.</td></tr>`
+  } else {
+    const rows = []
+    for (let i = 0; i < renRules.length; i++) {
+      const r = renRules[i]
+      const checked = selectedRuleIndex === i ? 'checked' : ''
+      const when = r.whenContains?.length ? r.whenContains.join(', ') : ''
+      let metaHtml = ''
+      if (r.applyTo || r.case || when) {
+        metaHtml = '<div class="rule-meta">'
+        if (r.applyTo) metaHtml += `<span class="meta-badge">Apply: ${renEscapeHtml(r.applyTo)}</span>`
+        if (r.case) metaHtml += `<span class="meta-badge">Case: ${renEscapeHtml(r.case)}</span>`
+        if (when) metaHtml += `<span class="meta-badge">When: ${renEscapeHtml(when)}${r.containsIgnoreCase ? ' (i)' : ''}</span>`
+        metaHtml += '</div>'
+      }
+      rows.push(`<tr data-idx="${i}">
+        <td><input type="radio" name="ruleSel" ${checked} /></td>
+        <td>${renEscapeHtml(r.name)}</td>
+        <td class="text-muted">
+          <div class="rule-pattern-main">${renHighlightRegex(r.pattern)}</div>${metaHtml}
+        </td>
+        <td class="text-muted">${renEscapeHtml(r.replace)}</td>
+      </tr>`)
+    }
+    ren.rulesBody.innerHTML = rows.join('')
+    ren.rulesBody.querySelectorAll('tr').forEach((tr) => {
+      tr.addEventListener('click', () => {
+        const idx = Number(tr.dataset.idx)
+        selectedRuleIndex = Number.isFinite(idx) ? idx : null
+        renRenderRules()
+      })
+    })
+  }
+  void renEvaluateGlobalTestStr()
+}
+
+function renRenderTargets() {
+  if (!ren.targetsBody) return
+  if (renTargets.length === 0) {
+    ren.targetsBody.innerHTML = `<tr><td colspan="4" class="text-muted">Add files to get started.</td></tr>`
+    return
+  }
+  const rows = []
+  for (let i = 0; i < renTargets.length; i++) {
+    const p = renTargets[i]
+    const cur = renBasename(p)
+    const prev = renPreview[i] ?? ''
+    const res = renResults[i] ?? ''
+    let resHtml = ''
+    if (res === 'OK') resHtml = '<span style="color:var(--success);font-weight:bold;">✔</span>'
+    else if (res.startsWith('ERR')) resHtml = `<span style="color:var(--danger);font-weight:bold;" title="${renEscapeHtml(res)}">❌</span>`
+    else if (res) resHtml = renEscapeHtml(res)
+    const checked = selectedTargetIdx.has(i) ? 'checked' : ''
+    rows.push(`<tr data-idx="${i}">
+      <td><input type="checkbox" ${checked} /></td>
+      <td>${renEscapeHtml(cur)}</td>
+      <td class="text-muted">${renEscapeHtml(prev)}</td>
+      <td style="text-align:center;">${resHtml}</td>
+    </tr>`)
+  }
+  ren.targetsBody.innerHTML = rows.join('')
+  ren.targetsBody.querySelectorAll('tr').forEach((tr) => {
+    tr.addEventListener('click', (ev) => {
+      const idx = Number(tr.dataset.idx)
+      if (!Number.isFinite(idx)) return
+      if (ev.target?.tagName?.toLowerCase() === 'input') return
+      if (selectedTargetIdx.has(idx)) selectedTargetIdx.delete(idx)
+      else selectedTargetIdx.add(idx)
+      renRenderTargets()
+    })
+    const cb = tr.querySelector('input[type="checkbox"]')
+    if (cb) {
+      cb.addEventListener('change', () => {
+        const idx = Number(tr.dataset.idx)
+        if (!Number.isFinite(idx)) return
+        if (cb.checked) selectedTargetIdx.add(idx)
+        else selectedTargetIdx.delete(idx)
+      })
+    }
+  })
+}
+
+async function renRecalcPreview() {
+  if (renTargets.length === 0) {
+    renPreview = []
+    renResults = []
+    renRenderTargets()
+    return
+  }
+  try {
+    const previews = await invoke('renamer_preview_names', { paths: renTargets, rules: renRules })
+    renPreview = previews
+    if (renResults.length !== renTargets.length) renResults = new Array(renTargets.length).fill('')
+    renRenderTargets()
+  } catch (e) {
+    if (ren.summary) ren.summary.textContent = `Preview failed: ${String(e)}`
+  }
+}
+
+async function renLoadSettings() {
+  renSetBusy(true)
+  try {
+    const resp = await invoke('load_settings')
+    renRules = resp.settings.renamerRules ?? []
+    if (org.regex && resp.settings.organizerRegex) org.regex.value = resp.settings.organizerRegex
+    selectedRuleIndex = null
+    renRenderRules()
+    await renRecalcPreview()
+    if (ren.summary) ren.summary.textContent = 'Settings loaded.'
+  } catch (e) {
+    if (ren.summary) ren.summary.textContent = `Settings load failed: ${String(e)}`
+  } finally {
+    renSetBusy(false)
+  }
+}
+
+async function renSaveSettings() {
+  renSetBusy(true)
+  try {
+    const settings = {
+      collision: orgGetCollision(),
+      organizerRegex: org.regex ? org.regex.value : '^([A-Za-z0-9]{2,8})-(.+)',
+      renamerRules: renRules,
+    }
+    await invoke('save_settings', { settings })
+    if (ren.summary) ren.summary.textContent = 'Settings saved.'
+  } catch (e) {
+    if (ren.summary) ren.summary.textContent = `Settings save failed: ${String(e)}`
+  } finally {
+    renSetBusy(false)
+  }
+}
+
+async function renAddInputs(inputs) {
+  if (!inputs.length) return
+  try {
+    const expanded = await invoke('renamer_expand_inputs', { inputs })
+    const existing = new Set(renTargets.map((p) => p.toLowerCase()))
+    for (const p of expanded) {
+      const key = p.toLowerCase()
+      if (!existing.has(key)) { existing.add(key); renTargets.push(p); renResults.push('') }
+    }
+    selectedTargetIdx.clear()
+    await renRecalcPreview()
+    if (ren.summary) ren.summary.textContent = `Targets: ${renTargets.length} files`
+  } catch (e) {
+    if (ren.summary) ren.summary.textContent = `Failed to add files: ${String(e)}`
+  }
+}
+
+async function renPickFiles() {
+  const selected = await openFileDialog({ multiple: true, directory: false })
+  if (!selected) return
+  await renAddInputs(Array.isArray(selected) ? selected : [selected])
+}
+
+async function renPickFolder() {
+  const selected = await openFileDialog({ multiple: false, directory: true })
+  if (!selected || Array.isArray(selected)) return
+  await renAddInputs([selected])
+}
+
+function renRemoveSelected() {
+  const idxs = Array.from(selectedTargetIdx).sort((a, b) => b - a)
+  for (const i of idxs) {
+    if (i >= 0 && i < renTargets.length) {
+      renTargets.splice(i, 1); renPreview.splice(i, 1); renResults.splice(i, 1)
+    }
+  }
+  selectedTargetIdx.clear()
+  renRenderTargets()
+  void renRecalcPreview()
+}
+
+function renClear() {
+  renTargets = []; renPreview = []; renResults = []
+  selectedTargetIdx.clear()
+  renRenderTargets()
+  if (ren.summary) ren.summary.textContent = 'Targets cleared'
+}
+
+function openRuleModal(mode, rule) {
+  modalMode = mode
+  if (ren.modalTitle) ren.modalTitle.textContent = mode === 'add' ? 'Add rule' : 'Edit rule'
+  if (ren.modalName) ren.modalName.value = rule?.name ?? ''
+  if (ren.modalPattern) ren.modalPattern.value = rule?.pattern ?? ''
+  if (ren.modalReplace) ren.modalReplace.value = rule?.replace ?? ''
+  if (ren.modalApplyTo) ren.modalApplyTo.value = rule?.applyTo ?? 'stem'
+  if (ren.modalCase) ren.modalCase.value = rule?.case ?? ''
+  if (ren.modalWhen) ren.modalWhen.value = (rule?.whenContains ?? []).join(', ')
+  if (ren.modalIcase) ren.modalIcase.checked = !!rule?.containsIgnoreCase
+  if (ren.modalTestStr) ren.modalTestStr.value = ''
+  ren.modal?.classList.remove('hidden')
+  ren.modalName?.focus()
+  renUpdateRegexPreview()
+}
+
+function closeRuleModal() { ren.modal?.classList.add('hidden') }
+
+function readRuleFromModal() {
+  const name = ren.modalName?.value.trim() || '(rule)'
+  const pattern = ren.modalPattern?.value.trim() || ''
+  if (!pattern) { if (ren.summary) ren.summary.textContent = 'Pattern is empty.'; return null }
+  const replace = ren.modalReplace?.value ?? ''
+  const applyTo = ren.modalApplyTo?.value === 'full' ? 'full' : 'stem'
+  const cas = ren.modalCase?.value ?? ''
+  const when = (ren.modalWhen?.value ?? '').split(/[,;\n]+/).map((x) => x.trim()).filter((x) => x.length > 0)
+  const icase = !!ren.modalIcase?.checked
+  return { name, pattern, replace, applyTo, case: cas, whenContains: when, containsIgnoreCase: icase }
+}
+
+async function renDoRename() {
+  if (renTargets.length === 0) {
+    if (ren.summary) ren.summary.textContent = 'No targets added.'
+    return
+  }
+  renSetBusy(true)
+  renSetStatus('running', 'RUNNING')
+  if (ren.summary) ren.summary.textContent = 'Renaming...'
+  try {
+    const result = await invoke('renamer_apply_rename', {
+      paths: renTargets,
+      rules: renRules,
+      collision: orgGetCollision(),
+    })
+    const newResults = new Array(renTargets.length).fill('')
+    for (const r of result.results) newResults[r.index] = r.status
+    renResults = newResults
+    renTargets = result.updatedPaths
+    await renRecalcPreview()
+    const ok = result.results.filter((r) => r.status === 'OK').length
+    const err = result.results.filter((r) => r.status.startsWith('ERR')).length
+    if (ren.summary) ren.summary.textContent = `Done: ${ok} OK / ${err} ERR`
+    renSetStatus('ready', 'READY')
+  } catch (e) {
+    if (ren.summary) ren.summary.textContent = `Rename failed: ${String(e)}`
+    renSetStatus('error', 'ERROR')
+  } finally {
+    renSetBusy(false)
+  }
+}
+
+async function renEvaluateGlobalTestStr() {
+  const testVal = ren.testStr?.value
+  if (!testVal) {
+    if (ren.testRes) { ren.testRes.textContent = 'Enter text above to preview results with all rules applied.'; ren.testRes.style.color = 'var(--text-muted)' }
+    return
+  }
+  if (renRules.length === 0) {
+    if (ren.testRes) { ren.testRes.textContent = testVal; ren.testRes.style.color = 'var(--text)' }
+    return
+  }
+  try {
+    let dummyPath = `C:\\FakeFolder\\${testVal}`
+    let addedFakeExt = false
+    if (!/\.[a-zA-Z0-9]{2,5}$/i.test(testVal)) { dummyPath += '.mp4'; addedFakeExt = true }
+    const previews = await invoke('renamer_preview_names', { paths: [dummyPath], rules: renRules })
+    if (previews && previews.length > 0) {
+      let res = renBasename(previews[0])
+      if (addedFakeExt && res.toLowerCase().endsWith('.mp4')) res = res.substring(0, res.length - 4)
+      if (ren.testRes) { ren.testRes.textContent = res; ren.testRes.style.color = '#fff' }
+    }
+  } catch (e) {
+    if (ren.testRes) { ren.testRes.textContent = `Error: ${e}`; ren.testRes.style.color = 'var(--danger)' }
+  }
+}
+
+function renUpdateRegexPreview() {
+  const pattern = ren.modalPattern?.value ?? ''
+  const replace = ren.modalReplace?.value ?? ''
+  const testStr = ren.modalTestStr?.value ?? ''
+  const icase = !!ren.modalIcase?.checked
+  if (ren.modalPatternPreview) ren.modalPatternPreview.innerHTML = renHighlightRegex(pattern)
+  try {
+    if (!pattern) { if (ren.modalTestRes) ren.modalTestRes.innerHTML = '<span class="text-muted">Enter a pattern.</span>'; return }
+    let testPat = pattern; let autoIcase = false
+    testPat = testPat.replace(/\(\?([a-zA-Z]+)\)/g, (_, f) => { if (f.includes('i')) autoIcase = true; return '' })
+    testPat = testPat.replace(/\(\?[a-zA-Z]+:/g, '(?:')
+    const flags = (icase || autoIcase) ? 'gi' : 'g'
+    const regex = new RegExp(testPat, flags)
+    if (testStr) {
+      const replaced = testStr.replace(regex, replace)
+      if (ren.modalTestRes) ren.modalTestRes.innerHTML = `<span style="color:var(--success);font-weight:700;">Result: </span> ${renEscapeHtml(replaced)}`
+    } else {
+      if (ren.modalTestRes) ren.modalTestRes.innerHTML = ''
+    }
+  } catch (e) {
+    if (ren.modalTestRes) ren.modalTestRes.innerHTML = `<span style="color:var(--danger);font-weight:700;">Regex error: ${renEscapeHtml(String(e?.message ?? e))}</span>`
+  }
+}
+
+// ReNamer drag & drop
+const renDropZone = $('#renDropZone')
+renDropZone?.addEventListener('dragover', (e) => { e.preventDefault(); renDropZone.classList.add('drag-over') })
+renDropZone?.addEventListener('dragleave', () => renDropZone.classList.remove('drag-over'))
+await listen('tauri://drag-drop', async (event) => {
+  const panel = $('#tab-renamer')
+  if (panel?.classList.contains('active')) {
+    renDropZone?.classList.remove('drag-over')
+    if (event.payload?.paths) await renAddInputs(event.payload.paths)
+  }
+})
+
+// ReNamer button wiring
+ren.btnAddFiles?.addEventListener('click', () => void renPickFiles())
+ren.btnAddFolder?.addEventListener('click', () => void renPickFolder())
+ren.btnRemove?.addEventListener('click', () => renRemoveSelected())
+ren.btnClear?.addEventListener('click', () => renClear())
+ren.btnRename?.addEventListener('click', () => void renDoRename())
+ren.btnRuleAdd?.addEventListener('click', () => openRuleModal('add'))
+ren.btnRuleEdit?.addEventListener('click', () => {
+  if (selectedRuleIndex == null || selectedRuleIndex < 0 || selectedRuleIndex >= renRules.length) {
+    if (ren.summary) ren.summary.textContent = 'Select a rule to edit.'; return
+  }
+  openRuleModal('edit', renRules[selectedRuleIndex])
+})
+ren.btnRuleRemove?.addEventListener('click', () => {
+  if (selectedRuleIndex == null) { if (ren.summary) ren.summary.textContent = 'Select a rule to remove.'; return }
+  renRules.splice(selectedRuleIndex, 1); selectedRuleIndex = null
+  renRenderRules(); void renRecalcPreview()
+})
+ren.btnRuleUp?.addEventListener('click', () => {
+  if (selectedRuleIndex == null) return
+  const to = selectedRuleIndex - 1
+  if (to < 0) return
+    ;[renRules[selectedRuleIndex], renRules[to]] = [renRules[to], renRules[selectedRuleIndex]]
+  selectedRuleIndex = to; renRenderRules(); void renRecalcPreview()
+})
+ren.btnRuleDown?.addEventListener('click', () => {
+  if (selectedRuleIndex == null) return
+  const to = selectedRuleIndex + 1
+  if (to >= renRules.length) return
+    ;[renRules[selectedRuleIndex], renRules[to]] = [renRules[to], renRules[selectedRuleIndex]]
+  selectedRuleIndex = to; renRenderRules(); void renRecalcPreview()
+})
+ren.btnSettingsSave?.addEventListener('click', () => void renSaveSettings())
+ren.modalBackdrop?.addEventListener('click', closeRuleModal)
+ren.modalCancel?.addEventListener('click', closeRuleModal)
+ren.modalSave?.addEventListener('click', () => {
+  const rule = readRuleFromModal()
+  if (!rule) return
+  if (modalMode === 'add') { renRules.push(rule); selectedRuleIndex = renRules.length - 1 }
+  else { if (selectedRuleIndex == null) return; renRules[selectedRuleIndex] = rule }
+  closeRuleModal(); renRenderRules(); void renRecalcPreview()
+})
+ren.modalPattern?.addEventListener('input', renUpdateRegexPreview)
+ren.modalReplace?.addEventListener('input', renUpdateRegexPreview)
+ren.modalTestStr?.addEventListener('input', renUpdateRegexPreview)
+ren.modalIcase?.addEventListener('change', renUpdateRegexPreview)
+ren.testStr?.addEventListener('input', () => void renEvaluateGlobalTestStr())
+
+renSetStatus('ready', 'READY')
+renRenderRules()
+renRenderTargets()
+void renLoadSettings()

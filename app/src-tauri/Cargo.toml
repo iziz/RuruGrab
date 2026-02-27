@@ -36,4 +36,5 @@ dirs-next = "2"
 tokio-util = "0.7"
 unicode-normalization = "0.1"
 encoding_rs = "0.8"
+fancy-regex = "0.13"
 

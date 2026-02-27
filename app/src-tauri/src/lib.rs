@@ -1,5 +1,7 @@
 mod api;
 mod core;
+mod organizer;
+mod renamer;
 
 use tauri::AppHandle;
 
@@ -15,7 +17,6 @@ use tauri::{
   WebviewWindowBuilder,
 };
 
-use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
 
 fn get_or_create_main_window(app: &tauri::AppHandle) -> Option<tauri::WebviewWindow> {
   if let Some(w) = app.get_webview_window("main") {
@@ -117,20 +118,9 @@ pub fn run() {
         .on_menu_event(|app, event| match event.id.as_ref() {
           "toggle" => toggle_main(app),
           "quit" => {
-            let app_handle = app.clone();
-            app
-              .dialog()
-              .message("Close RuruGrab ?")
-              .title("RuruGrab")
-              .kind(MessageDialogKind::Warning)
-              .buttons(MessageDialogButtons::OkCancel)
-              .show(move |ok| {
-                if ok {
-                  let st = app_handle.state::<std::sync::Arc<AppState>>();
-                  st.quitting.store(true, Ordering::SeqCst);
-                  app_handle.exit(0);
-                }
-              });
+            let st = app.state::<std::sync::Arc<AppState>>();
+            st.quitting.store(true, Ordering::SeqCst);
+            app.exit(0);
           }
           _ => {}
         })
@@ -178,6 +168,16 @@ pub fn run() {
         }
       }
     })
+    .invoke_handler(tauri::generate_handler![
+      organizer::scan_folder,
+      organizer::start_move,
+      renamer::open_path,
+      renamer::load_settings,
+      renamer::save_settings,
+      renamer::renamer_expand_inputs,
+      renamer::renamer_preview_names,
+      renamer::renamer_apply_rename,
+    ])
     .build(tauri::generate_context!())
     .expect("error while building tauri application")
     .run(|app, event| {

@@ -1,11 +1,12 @@
 <!doctype html>
 <html lang="ko">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>UtubeHolic</title>
   <style>
-    :root { 
+    :root {
       color-scheme: dark;
     }
 
@@ -32,7 +33,7 @@
       height: 100%;
       padding: 30px;
       background: rgba(30, 41, 59, 0.85);
-      box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -49,7 +50,7 @@
     .sub {
       font-size: 13px;
       line-height: 1.6;
-      margin: 0 0 20px;
+      margin: 0 0 10px;
       color: rgba(226, 232, 240, 0.8);
       word-break: keep-all;
     }
@@ -69,9 +70,17 @@
     }
 
     @keyframes pulse {
-      0%   { box-shadow: 0 0 0 0 rgba(34,197,94,0.7); }
-      70%  { box-shadow: 0 0 0 10px rgba(34,197,94,0); }
-      100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+      0% {
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+      }
+
+      70% {
+        box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+      }
+
+      100% {
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+      }
     }
 
     .hint {
@@ -90,17 +99,21 @@
     }
   </style>
 </head>
+
 <body>
   <div class="card">
     <div class="title">RuruGrab</div>
-    <p class="sub">RuruGrab is a browser-integrated media solution consisting of a Chrome/Edge Extension and a Core App. It enables seamless Image & Video downloads from major social platforms and provides a Cross-browser YouTube Watch History sync and marking system.</p>
-    
+    <p class="sub">RuruGrab is a browser-integrated media solution consisting of a Chrome/Edge Extension and a Core App.
+      It enables seamless Image & Video downloads from major social platforms and provides a Cross-browser YouTube Watch
+      History sync and marking system.</p>
+
     <div class="row">
       <span class="dot" aria-hidden="true"></span>
       <div class="loading-text">System Initializing...</div>
     </div>
-    
+
     <div class="hint">powered by ohtalk.me</div>
   </div>
 </body>
+
 </html>
