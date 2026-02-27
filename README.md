@@ -58,6 +58,11 @@ RuruGrab is a **Chrome / Edge** solution that combines a **browser extension** a
   - `gallery-dl`
 
 > These binaries are expected under `app/binaries/` (platform-specific executables).
+> ffmpeg-x86_64-pc-windows-msvc.exe
+> ffplay-x86_64-pc-windows-msvc.exe
+> ffprobe-x86_64-pc-windows-msvc.exe
+> gallery-dl-x86_64-pc-windows-msvc.exe
+> yt-dlp-x86_64-pc-windows-msvc.exe
 
 
 ## Quick Start (Development)
