@@ -1,5 +1,7 @@
 # RuruGrab (UtubeHolic)
 
+**AI Created code**
+
 RuruGrab is a **Chrome / Edge** solution that combines a **browser extension** and a **local core app** to:
 
 - Download media from **YouTube / X (Twitter) / Instagram**
