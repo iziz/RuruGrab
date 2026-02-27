@@ -617,3 +617,168 @@ input[type="color"]::-webkit-color-swatch { border: none; border-radius: 5px; }
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after { transition: none !important; animation: none !important; }
 }
+
+/* ── advanced toggle ── */
+.advancedToggle {
+  padding-top: 14px;
+  margin-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.linkBtn {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 0;
+  cursor: pointer;
+  transition: color 150ms ease;
+}
+
+.linkBtn:hover {
+  background: none !important;
+  color: var(--text-sub);
+}
+
+.advancedPanel {
+  padding-top: 12px;
+}
+
+.advancedPanel .actions {
+  border-top: none;
+  margin-top: 8px;
+  padding-top: 8px;
+}
+
+/* ── sync status badge ── */
+.statBadge .statValue.sync-ok {
+  color: var(--green);
+}
+
+.statBadge .statValue.sync-off {
+  color: var(--text-muted);
+}
+
+.statBadge .statValue.sync-err {
+  color: var(--danger);
+}
+
+/* ── sync progress ── */
+.syncProgress {
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: var(--accent-hi);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── stats section (#11) ── */
+.statsContent {
+  margin-top: 4px;
+}
+
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.statCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.statCardLabel {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.statCardValue {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.statCardSub {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.statsBarSection {
+  margin-top: 4px;
+}
+
+.statsBarTitle {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.statsBarChart {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 80px;
+  padding: 0 2px;
+}
+
+.statsBar {
+  flex: 1;
+  min-width: 0;
+  border-radius: 4px 4px 0 0;
+  background: linear-gradient(180deg, var(--accent-hi), var(--accent));
+  transition: height 300ms ease;
+  position: relative;
+}
+
+.statsBar:hover {
+  opacity: 0.85;
+}
+
+.statsBar::after {
+  content: attr(data-label);
+  position: absolute;
+  bottom: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 8px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.statsBar[data-count]::before {
+  content: attr(data-count);
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--text-sub);
+  white-space: nowrap;
+}
+
+@media (max-width: 660px) {
+  .statsRow { grid-template-columns: 1fr; }
+}

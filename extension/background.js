@@ -3,31 +3,9 @@
 
 self.UTH_BG = self.UTH_BG || {};
 
-(() => {
-  const BG = self.UTH_BG;
-
-  BG.CM_ROOT = 'utubeholic_root';
-  BG.CM_DOWNLOAD = 'utubeholic_download';
-  BG.CM_MARK = 'utubeholic_mark_watched';
-  BG.CM_UNMARK = 'utubeholic_unmark_watched';
-
-  BG.SQLITE_ALARM_NAME = 'utubeholic_sqlite_sync';
-
-  // Matches options.js defaults
-  BG.DEFAULT_SQLITE_SYNC = {
-    sqliteSyncEnabled: false,
-    sqliteServerUrl: 'http://127.0.0.1:5000',
-    sqliteSyncIntervalMin: 10,
-    sqliteSyncLastSuccessMs: 0,
-    sqliteSyncLastRowCount: 0,
-    sqliteSyncLastError: '',
-  };
-
-  // Watched cache
-  BG.WATCHED_CACHE_MAX = 8000;
-})();
-
+// Load constants FIRST, then all modules
 importScripts(
+  'constants.js',
   'db.js',
   'bg/site-rules.js',
   'bg/utils.js',
@@ -39,6 +17,24 @@ importScripts(
   'bg/newtab_mark.js',
   'bg/messages.js'
 );
+
+(() => {
+  const BG = self.UTH_BG;
+
+  BG.CM_ROOT = 'utubeholic_root';
+  BG.CM_DOWNLOAD = 'utubeholic_download';
+  BG.CM_MARK = 'utubeholic_mark_watched';
+  BG.CM_UNMARK = 'utubeholic_unmark_watched';
+
+  BG.SQLITE_ALARM_NAME = 'utubeholic_sqlite_sync';
+
+  // From constants.js (loaded above)
+  BG.DEFAULT_SQLITE_SYNC = UTH_CONSTANTS.DEFAULT_SQLITE_SYNC;
+
+  // Watched cache
+  BG.WATCHED_CACHE_MAX = 8000;
+})();
+
 (() => {
   const BG = self.UTH_BG;
 

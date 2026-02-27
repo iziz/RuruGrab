@@ -173,6 +173,12 @@
         return true;
       }
 
+      if (msg?.type === 'CANCEL_AUTO_SCROLL') {
+        CS.cancelAutoScroll?.();
+        sendResponse({ ok: true });
+        return true;
+      }
+
       if (msg?.type === 'WATCH_STATUS_CHANGED' && msg.videoId) {
         CS.setCachedStatus(msg.videoId, !!msg.watched);
 

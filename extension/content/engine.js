@@ -74,15 +74,19 @@
 
   function setCachedStatus(videoId, watched) {
     if (!videoId) return;
+    // Re-insert to move to end (most recent)
+    if (statusCache.has(videoId)) statusCache.delete(videoId);
     statusCache.set(videoId, { watched: !!watched, ts: Date.now() });
 
     if (statusCache.size <= STATUS_CACHE_MAX) return;
 
-    const entries = Array.from(statusCache.entries());
-    entries.sort((a, b) => (a[1]?.ts || 0) - (b[1]?.ts || 0));
+    // Evict oldest entries — Map preserves insertion order (#4)
     const removeCount = Math.max(1, Math.ceil(STATUS_CACHE_MAX * 0.1));
-    for (let i = 0; i < removeCount && i < entries.length; i++) {
-      statusCache.delete(entries[i][0]);
+    const iter = statusCache.keys();
+    for (let i = 0; i < removeCount; i++) {
+      const { value, done } = iter.next();
+      if (done) break;
+      statusCache.delete(value);
     }
   }
 

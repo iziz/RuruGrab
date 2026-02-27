@@ -89,4 +89,70 @@
       cancelled: response.cancelled || false,
     };
   };
+
+  // -------------------- Google Takeout JSON Import (#10) --------------------
+  // Parses YouTube watch-history.json from Google Takeout.
+  // Format: Array of { "titleUrl": "https://www.youtube.com/watch?v=...", "time": "2024-01-15T..." }
+  BG.importFromTakeoutJson = async function importFromTakeoutJson(jsonText) {
+    let data;
+    try {
+      data = JSON.parse(jsonText);
+    } catch (e) {
+      throw new Error(`Invalid JSON: ${e.message}`);
+    }
+
+    // Support both raw array and { watched: [...] } (our own export format)
+    const entries = Array.isArray(data) ? data
+      : Array.isArray(data?.watched) ? data.watched
+      : null;
+
+    if (!entries) throw new Error('Unrecognized format: expected an array or { watched: [...] }');
+
+    const ids = new Map(); // videoId → ts
+
+    for (const entry of entries) {
+      // Google Takeout format
+      const url = entry?.titleUrl || entry?.url || '';
+      // Our export format
+      const directId = entry?.id || '';
+
+      let videoId = null;
+
+      if (directId && directId.length === 11) {
+        videoId = directId;
+      } else if (url) {
+        videoId = BG.extractVideoId(url);
+      }
+
+      if (!videoId) continue;
+
+      // Parse timestamp
+      let ts = Date.now();
+      const timeStr = entry?.time || entry?.ts;
+      if (timeStr) {
+        const parsed = typeof timeStr === 'number' ? timeStr : new Date(timeStr).getTime();
+        if (Number.isFinite(parsed) && parsed > 0) ts = parsed;
+      }
+
+      // Keep the latest timestamp per videoId
+      if (!ids.has(videoId) || ids.get(videoId) < ts) {
+        ids.set(videoId, ts);
+      }
+    }
+
+    if (!ids.size) {
+      return { ok: true, parsed: entries.length, found: 0, inserted: 0 };
+    }
+
+    const videoIds = Array.from(ids.keys());
+    const res = await BG.markWatchedManySkipExisting(videoIds, Date.now());
+    await BG.broadcastRefreshWatched().catch(() => {});
+
+    return {
+      ok: true,
+      parsed: entries.length,
+      found: ids.size,
+      inserted: res?.inserted || 0,
+    };
+  };
 })();

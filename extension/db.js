@@ -358,38 +358,39 @@ const YT_DLP_DB = (() => {
   /**
    * Delete old pushed changelog entries to save space.
    * Keeps the most recent `keepCount` pushed entries.
+   * Optimized: counts first, then deletes oldest via cursor without
+   * loading all keys into memory.
    */
   async function pruneChangelog({ keepCount = 1000 } = {}) {
     const db = await open();
-    const tx = db.transaction(STORE_CHANGELOG, 'readwrite');
-    const store = tx.objectStore(STORE_CHANGELOG);
-    const idx = store.index('pushed');
 
-    // Count pushed entries
-    const pushed = [];
+    // Step 1: Count total pushed entries
+    const countTx = db.transaction(STORE_CHANGELOG, 'readonly');
+    const countIdx = countTx.objectStore(STORE_CHANGELOG).index('pushed');
+    const totalPushed = await _reqToPromise(countIdx.count(IDBKeyRange.only(1)));
+    await _txDone(countTx);
+
+    const deleteCount = totalPushed - keepCount;
+    if (deleteCount <= 0) return;
+
+    // Step 2: Delete oldest `deleteCount` pushed entries via cursor
+    const delTx = db.transaction(STORE_CHANGELOG, 'readwrite');
+    const delIdx = delTx.objectStore(STORE_CHANGELOG).index('pushed');
+    let deleted = 0;
+
     await new Promise((resolve, reject) => {
-      const req = idx.openCursor(IDBKeyRange.only(1));
+      const req = delIdx.openCursor(IDBKeyRange.only(1));
       req.onerror = () => reject(req.error || new Error('Cursor failed'));
       req.onsuccess = () => {
         const cursor = req.result;
-        if (!cursor) return resolve();
-        pushed.push(cursor.primaryKey);
+        if (!cursor || deleted >= deleteCount) return resolve();
+        cursor.delete();
+        deleted++;
         cursor.continue();
       };
     });
 
-    // Delete excess (oldest first — autoIncrement keys are ordered)
-    const deleteCount = Math.max(0, pushed.length - keepCount);
-    if (deleteCount > 0) {
-      const toDelete = pushed.slice(0, deleteCount);
-      const tx2 = db.transaction(STORE_CHANGELOG, 'readwrite');
-      const store2 = tx2.objectStore(STORE_CHANGELOG);
-      for (const key of toDelete) store2.delete(key);
-      await _txDone(tx2);
-    }
-
-    // Note: the first tx is read-only at this point; safe to not await _txDone
-    // since we only did reads. But the pushed array was collected before tx2.
+    await _txDone(delTx);
   }
 
   /**
@@ -429,6 +430,53 @@ const YT_DLP_DB = (() => {
     return { applied };
   }
 
+  /**
+   * Compute watch statistics from the watched store (#11).
+   * Returns daily counts for the last N days and monthly counts.
+   */
+  async function getWatchStats({ days = 30 } = {}) {
+    const db = await open();
+    const tx = db.transaction(STORE_WATCHED, 'readonly');
+    const store = tx.objectStore(STORE_WATCHED);
+
+    const dailyMap = Object.create(null);
+    const monthlyMap = Object.create(null);
+    let total = 0;
+
+    const cutoff = Date.now() - (days * 24 * 60 * 60 * 1000);
+
+    await new Promise((resolve, reject) => {
+      const req = store.openCursor();
+      req.onerror = () => reject(req.error || new Error('Cursor failed'));
+      req.onsuccess = () => {
+        const cursor = req.result;
+        if (!cursor) return resolve();
+        total++;
+        const ts = Number(cursor.value?.ts);
+        if (ts && ts > cutoff) {
+          const d = new Date(ts);
+          const dayKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+          const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          dailyMap[dayKey] = (dailyMap[dayKey] || 0) + 1;
+          monthlyMap[monthKey] = (monthlyMap[monthKey] || 0) + 1;
+        }
+        cursor.continue();
+      };
+    });
+
+    await _txDone(tx);
+
+    const daily = Object.entries(dailyMap)
+      .map(([date, count]) => ({ date, count }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    const monthly = Object.entries(monthlyMap)
+      .map(([month, count]) => ({ month, count }))
+      .sort((a, b) => a.month.localeCompare(b.month));
+
+    return { daily, monthly, total };
+  }
+
   return {
     open,
     // watched store
@@ -448,5 +496,7 @@ const YT_DLP_DB = (() => {
     markChangesPushed,
     pruneChangelog,
     applyRemoteChanges,
+    // stats (#11)
+    getWatchStats,
   };
 })();

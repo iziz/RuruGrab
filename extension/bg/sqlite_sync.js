@@ -39,12 +39,23 @@
 
   BG.setSqliteStatus = setSqliteStatus;
 
+  //  Progress broadcasting (#9)
+  //  Options page listens for SQLITE_SYNC_PROGRESS messages.
+  function broadcastSyncProgress(message) {
+    try {
+      chrome.runtime.sendMessage({ type: 'SQLITE_SYNC_PROGRESS', message }).catch(() => {});
+    } catch { /* options page may not be open */ }
+  }
+
+  BG.broadcastSyncProgress = broadcastSyncProgress;
+
   //  Pull finalization (shared by sync paths)
   async function finalizePull(resp, sinceSeq, totalPushed) {
     const remoteChanges = resp.remote_changes || [];
     let appliedCount = 0;
 
     if (remoteChanges.length) {
+      broadcastSyncProgress(`↓ Applying ${remoteChanges.length} remote changes...`);
       const result = await YT_DLP_DB.applyRemoteChanges(remoteChanges);
       appliedCount = result?.applied || 0;
 
@@ -93,6 +104,7 @@
     if (!bootstrapDone.syncBootstrapDone) {
       const hasChangelog = await YT_DLP_DB.exportUnpushedChanges({ limit: 1 });
       if (!hasChangelog.length) {
+        broadcastSyncProgress('Bootstrap: migrating local records to changelog...');
         while (true) {
           const legacy = await YT_DLP_DB.exportUnsynced({ limit: CHUNK });
           if (!legacy.length) break;
@@ -118,6 +130,8 @@
         action: c.action,
         ts: c.ts,
       }));
+
+      broadcastSyncProgress(`↑ Pushing ${totalPushed + changes.length} changes...`);
 
       let resp;
       try {
@@ -149,6 +163,7 @@
     }
 
     // unpushed 0 — pull only
+    broadcastSyncProgress('↓ Checking for remote changes...');
     try {
       const r = await fetch(endpoint, {
         method: 'POST',
@@ -172,9 +187,60 @@
 
   BG.syncChanges = syncChanges;
 
-  //  syncChanges (messages.js)
+
+  //  Get server watched count (used for auto-restore detection)
+  async function getServerWatchedCount() {
+    const serverBase = await BG.getSqliteServerBaseUrl();
+    try {
+      const r = await fetch(`${serverBase}/watched_count`, {
+        method: 'GET', cache: 'no-store',
+      });
+      if (!r.ok) return null;
+      const j = await r.json().catch(() => null);
+      return BG.parseCountFromJson(j);
+    } catch {
+      return null;
+    }
+  }
+
+
+  //  Smart sync entry point (#2 — auto Full Restore for new browsers)
+  //  If local DB is nearly empty but server has significant data,
+  //  automatically runs Full Restore instead of incremental sync.
   async function syncUnsyncedToSqlite() {
-    const localCount = await YT_DLP_DB.count().catch(() => null);
+    const localCount = await YT_DLP_DB.count().catch(() => 0);
+
+    // Auto-restore threshold: local has < 100 items, server has > 500
+    const AUTO_RESTORE_LOCAL_MAX = 100;
+    const AUTO_RESTORE_SERVER_MIN = 500;
+
+    if (localCount < AUTO_RESTORE_LOCAL_MAX) {
+      broadcastSyncProgress('Checking server for existing data...');
+      const serverCount = await getServerWatchedCount();
+
+      if (serverCount !== null && serverCount >= AUTO_RESTORE_SERVER_MIN) {
+        broadcastSyncProgress(`Auto-restore: server has ${serverCount.toLocaleString()} items, downloading...`);
+
+        const result = await restoreFromSqlite({ wipe: false });
+        const newLocalCount = await YT_DLP_DB.count().catch(() => null);
+
+        return {
+          ok: true,
+          sent: 0,
+          received: result.restored ?? 0,
+          serverCountBefore: serverCount,
+          serverCountAfter: result.rowCount ?? null,
+          rowCount: result.rowCount ?? null,
+          localCount: newLocalCount,
+          forcedFull: true,
+          resetUpdated: 0,
+          pulled: result.restored ?? 0,
+          cursor: 0,
+        };
+      }
+    }
+
+    // Normal incremental sync
     const result = await syncChanges();
 
     return {
@@ -194,11 +260,14 @@
 
   BG.syncUnsyncedToSqlite = syncUnsyncedToSqlite;
 
-  //  Restore from server (full pull)
+  //  Restore from server (full pull) — with progress reporting (#9)
   async function restoreFromSqlite({ wipe = false } = {}) {
     const serverBase = await BG.getSqliteServerBaseUrl();
 
-    if (wipe) await YT_DLP_DB.clearAll();
+    if (wipe) {
+      broadcastSyncProgress('Wiping local DB...');
+      await YT_DLP_DB.clearAll();
+    }
 
     let page = 0;
     const pageSize = 5000;
@@ -224,6 +293,14 @@
         for (const r of records) BG.cacheWatched(r.id);
       }
 
+      // Progress reporting (#9)
+      if (total > 0) {
+        const pct = Math.min(100, Math.round((restored / total) * 100));
+        broadcastSyncProgress(`↓ Restoring: ${restored.toLocaleString()} / ${total.toLocaleString()} (${pct}%)`);
+      } else {
+        broadcastSyncProgress(`↓ Restoring: ${restored.toLocaleString()} items...`);
+      }
+
       if (!data.has_more) break;
       page += 1;
       if (page > 100000) break;
@@ -246,6 +323,8 @@
 
     await setSqliteStatus({ successMs: Date.now(), rowCount: total, error: '' });
     await BG.broadcastRefreshWatched();
+
+    broadcastSyncProgress('');  // clear progress
 
     return { ok: true, restored, rowCount: total };
   }

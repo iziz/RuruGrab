@@ -29,35 +29,14 @@ function sendTabMessage(tabId, msg) {
   });
 }
 
-const DEFAULT_SETTINGS = {
-  badgeText: 'WATCHED',
-
-  // Badge style (CSS colors; alpha included)
-  // Stored as CSS color strings so content script can apply them directly.
-  badgeBgColor: 'rgba(249, 255, 22, 0.7)',
-  badgeTextColor: 'rgba(0, 0, 0, 0.9)',
-  badgeBorderColor: 'rgba(255, 255, 255, 0.6)',
-};
+const DEFAULT_SETTINGS = UTH_CONSTANTS.DEFAULT_SETTINGS;
 
 // The "Enable watched marking" / "Show badge" options were removed and are now forced ON.
-const FORCED_MARKING_SETTINGS = {
-  watchedEnabled: true,
-  badgeEnabled: true,
-};
+const FORCED_MARKING_SETTINGS = UTH_CONSTANTS.FORCED_MARKING_SETTINGS;
 
-const DEFAULT_UI = {
-  historyIncludeShorts: true,
-  historyMaxResults: 100000,
-};
+const DEFAULT_UI = UTH_CONSTANTS.DEFAULT_UI;
 
-const DEFAULT_SQLITE_SYNC = {
-  sqliteSyncEnabled: false,
-  sqliteServerUrl: 'http://127.0.0.1:5000',
-  sqliteSyncIntervalMin: 10,
-  sqliteSyncLastSuccessMs: 0,
-  sqliteSyncLastRowCount: 0,
-  sqliteSyncLastError: '',
-};
+const DEFAULT_SQLITE_SYNC = UTH_CONSTANTS.DEFAULT_SQLITE_SYNC;
 
 
 const $ = (id) => document.getElementById(id);
@@ -331,6 +310,19 @@ function _applySqliteGateUI({ ok, reason }) {
         restoreBtn.title = _sqliteServerOk ? '' : `Only available when the server (server.py) is running. (${reason || 'unreachable'})`;
     restoreBtn.textContent = _sqliteRestoreBtnLabel;
   }
+
+  // Update status badge
+  const statusVal = $('syncStatusValue');
+  if (statusVal) {
+    statusVal.classList.remove('sync-ok', 'sync-off', 'sync-err');
+    if (_sqliteServerOk) {
+      statusVal.textContent = 'Connected';
+      statusVal.classList.add('sync-ok');
+    } else {
+      statusVal.textContent = reason || 'Offline';
+      statusVal.classList.add('sync-err');
+    }
+  }
 }
 
 async function refreshSqliteServerAvailability({ force = false } = {}) {
@@ -444,6 +436,7 @@ async function refreshSqliteStatus() {
   } catch (e) {
     if ($('sqliteLastSuccess')) $('sqliteLastSuccess').textContent = '-';
     if ($('sqliteLastError')) $('sqliteLastError').textContent = String(e);
+    if ($('sqliteLastErrorRow')) $('sqliteLastErrorRow').style.display = '';
     return;
   }
 
@@ -457,6 +450,10 @@ async function refreshSqliteStatus() {
 
   if ($('sqliteLastSuccess')) $('sqliteLastSuccess').textContent = lastText;
   if ($('sqliteLastError')) $('sqliteLastError').textContent = err ? String(err) : '-';
+  // Show error row only when there's an actual error
+  if ($('sqliteLastErrorRow')) {
+    $('sqliteLastErrorRow').style.display = err ? '' : 'none';
+  }
 }
 
 async function loadSqliteUI() {
@@ -549,7 +546,6 @@ $('sqliteServerUrl')?.addEventListener('change', async () => { await saveSqliteU
 $('sqliteSyncIntervalMin')?.addEventListener('change', async () => { await saveSqliteUI(); await refreshSqliteStatus(); });
 
 $('sqliteSyncNowBtn')?.addEventListener('click', async () => {
-  // Only run when the server is up (if offline, disable the button instead of logging failures).
   const gate = await refreshSqliteServerAvailability({ force: true }).catch(() => ({ ok: false, reason: 'unreachable' }));
   if (!gate?.ok) {
         log(`Failed: you can sync only when the server (server.py) is running. (${gate?.reason || 'unreachable'})`);
@@ -557,8 +553,22 @@ $('sqliteSyncNowBtn')?.addEventListener('click', async () => {
     return;
   }
 
-    log('Starting SQLite sync...');
+  const syncBtn = $('sqliteSyncNowBtn');
+  if (syncBtn) {
+    syncBtn.disabled = true;
+    syncBtn.textContent = '싱크 중...';
+  }
+
+    log('Starting sync...');
   const resp = await sendRuntimeMessage({ type: 'SQLITE_SYNC_NOW' }).catch((e) => ({ ok: false, error: String(e) }));
+
+  if (syncBtn) {
+    syncBtn.disabled = false;
+    syncBtn.textContent = '싱크하기';
+  }
+  // Clear progress
+  const progressEl = $('syncProgress');
+  if (progressEl) progressEl.textContent = '';
 
   if (!resp?.ok) {
         log(`Failed: ${resp?.error || 'unknown error'}`);
@@ -571,42 +581,40 @@ $('sqliteSyncNowBtn')?.addEventListener('click', async () => {
     return Number.isFinite(n) ? n.toLocaleString('en-US') : '?';
   };
 
-  const before = fmt(resp.serverCountBefore);
-  const after = fmt(resp.serverCountAfter);
-  const display = fmt(resp.rowCount);
-  const local = fmt(resp.localCount);
+  const parts = [];
+  if (resp.forcedFull) parts.push('auto-restored from server');
+  if (resp.sent > 0) parts.push(`↑ sent ${fmt(resp.sent)}`);
+  if (resp.pulled > 0) parts.push(`↓ received ${fmt(resp.pulled)}`);
+  if (!resp.sent && !resp.pulled && !resp.forcedFull) parts.push('Already up to date');
+  parts.push(`server: ${fmt(resp.rowCount)} rows`);
+  parts.push(`local: ${fmt(resp.localCount)} rows`);
 
-  const extra = [];
-if (resp.forcedFull) extra.push('full-resync');
-if (resp.resetUpdated) extra.push(`reset ${fmt(resp.resetUpdated)}`);
-if (resp.countWarning) extra.push(`WARN: ${String(resp.countWarning)}`);
-
-// If DB paths differ, you can immediately detect "writing/reading different files".
-if (resp.sqlitePathSync) extra.push(`sync sqlite: ${String(resp.sqlitePathSync)}`);
-if (resp.sqlitePathWatchedCount) extra.push(`wc sqlite: ${String(resp.sqlitePathWatchedCount)}`);
-
-  log(
-    `Done: sent ${fmt(resp.sent)} / applied ${fmt(resp.received)} / ` +
-    `server rows ${before}→${after} (display=${display}) / local rows ${local}` +
-    (extra.length ? ` · ${extra.join(' / ')}` : '')
-  );
+  log(`Done: ${parts.join(' · ')}`);
 
   await refreshSqliteStatus();
+  await refreshCount();
+  await refreshStats();
+  if (resp.pulled > 0 || resp.forcedFull) notifyYouTubeTabsRefresh();
 });
 
 $('sqliteRestoreBtn')?.addEventListener('click', async () => {
   const wipe = !!$('sqliteRestoreWipe')?.checked;
   const ok = confirm(wipe
-    ? 'Restore from SQLite. (Wipe IndexedDB before restore)\nContinue?'
-    : 'Restore from SQLite. (Merge with existing IndexedDB)\nContinue?');
+    ? 'Full restore: wipe local DB and download everything from server.\nContinue?'
+    : 'Full restore: merge server data with existing local DB.\nContinue?');
   if (!ok) return;
 
-    log('Starting SQLite restore...');
+    log('Starting full restore from server...');
   const resp = await sendRuntimeMessage({ type: 'SQLITE_RESTORE', wipe }).catch((e) => ({ ok: false, error: String(e) }));
+  // Clear progress
+  const progressEl = $('syncProgress');
+  if (progressEl) progressEl.textContent = '';
+
   if (!resp?.ok)     log(`Failed: ${resp?.error || 'unknown error'}`);
-    else log(`Done: restored ${resp.restored?.toLocaleString?.() ?? resp.restored} / sqlite rows ${resp.rowCount?.toLocaleString?.() ?? resp.rowCount}`);
+    else log(`Done: restored ${resp.restored?.toLocaleString?.() ?? resp.restored} items (server total: ${resp.rowCount?.toLocaleString?.() ?? resp.rowCount})`);
   await refreshCount();
   await refreshSqliteStatus();
+  await refreshStats();
   notifyYouTubeTabsRefresh();
 });
 
@@ -627,18 +635,20 @@ $('importHistoryAllBtn').addEventListener('click', async () => {
 
     log(`Done: scanned ${resp.scannedUrls?.toLocaleString?.() ?? resp.scannedUrls} URLs → found ${resp.found?.toLocaleString?.() ?? resp.found} videoIds → added ${resp.inserted?.toLocaleString?.() ?? resp.inserted} (including skips)`);
   await refreshCount();
+  await refreshStats();
   notifyYouTubeTabsRefresh();
 });
 
-// Import from the YouTube Watch History page
+// Import from the YouTube Watch History page (with cancel support #7)
 $('importYouTubeHistoryBtn')?.addEventListener('click', async () => {
   const btn = $('importYouTubeHistoryBtn');
+  const cancelBtn = $('cancelYouTubeHistoryBtn');
   if (!btn) return;
   
-  // Disable the button
   btn.disabled = true;
   const originalText = btn.textContent;
     btn.textContent = 'Working...';
+  if (cancelBtn) cancelBtn.style.display = '';
 
     log('Opening the YouTube Watch History page...');
   
@@ -646,9 +656,9 @@ $('importYouTubeHistoryBtn')?.addEventListener('click', async () => {
     type: 'IMPORT_FROM_YOUTUBE_HISTORY_PAGE'
   }).catch((e) => ({ ok: false, error: String(e) }));
 
-  // Restore the button state
   btn.disabled = false;
   btn.textContent = originalText;
+  if (cancelBtn) cancelBtn.style.display = 'none';
 
   if (!resp?.ok) {
         log(`Failed: ${resp?.error || 'unknown error'}`);
@@ -662,11 +672,79 @@ $('importYouTubeHistoryBtn')?.addEventListener('click', async () => {
 
     log(`Done: collected ${resp.collected?.toLocaleString?.() ?? resp.collected} → inserted ${resp.inserted?.toLocaleString?.() ?? resp.inserted} (scrolled ${resp.scrollCount || 0} times)`);
   await refreshCount();
+  await refreshStats();
   notifyYouTubeTabsRefresh();
+});
+
+$('cancelYouTubeHistoryBtn')?.addEventListener('click', () => {
+  sendRuntimeMessage({ type: 'CANCEL_YOUTUBE_HISTORY_SCROLL' }).catch(() => {});
+  log('Cancel requested...');
 });
 
 
 // Progress messages from background
+
+// Google Takeout JSON import (#10)
+$('importTakeoutBtn')?.addEventListener('click', () => {
+  $('takeoutFile')?.click();
+});
+
+$('takeoutFile')?.addEventListener('change', async (e) => {
+  const file = e.target?.files?.[0];
+  if (!file) return;
+  e.target.value = '';
+
+  log(`Reading Takeout file: ${file.name} (${(file.size / 1024).toFixed(1)} KB)...`);
+
+  try {
+    const text = await file.text();
+    const resp = await sendRuntimeMessage({ type: 'IMPORT_TAKEOUT', jsonText: text })
+      .catch((err) => ({ ok: false, error: String(err) }));
+
+    if (!resp?.ok) {
+      log(`Failed: ${resp?.error || 'unknown error'}`);
+    } else {
+      log(`Done: parsed ${resp.parsed?.toLocaleString()} entries → found ${resp.found?.toLocaleString()} videoIds → added ${resp.inserted?.toLocaleString()}`);
+    }
+  } catch (err) {
+    log(`Failed: ${err.message || err}`);
+  }
+
+  await refreshCount();
+  await refreshStats();
+  notifyYouTubeTabsRefresh();
+});
+
+// JSON import (restore from exported JSON)
+$('importJsonBtn')?.addEventListener('click', () => {
+  $('importJsonFile')?.click();
+});
+
+$('importJsonFile')?.addEventListener('change', async (e) => {
+  const file = e.target?.files?.[0];
+  if (!file) return;
+  e.target.value = '';
+
+  log(`Reading JSON file: ${file.name}...`);
+
+  try {
+    const text = await file.text();
+    const resp = await sendRuntimeMessage({ type: 'IMPORT_TAKEOUT', jsonText: text })
+      .catch((err) => ({ ok: false, error: String(err) }));
+
+    if (!resp?.ok) {
+      log(`Failed: ${resp?.error || 'unknown error'}`);
+    } else {
+      log(`Done: restored ${resp.found?.toLocaleString()} items → added ${resp.inserted?.toLocaleString()} new`);
+    }
+  } catch (err) {
+    log(`Failed: ${err.message || err}`);
+  }
+
+  await refreshCount();
+  await refreshStats();
+  notifyYouTubeTabsRefresh();
+});
 $('exportBtn').addEventListener('click', async () => {
     log('Export: reading...');
   const all = await YT_DLP_DB.exportAll();
@@ -696,11 +774,103 @@ $('clearBtn').addEventListener('click', async () => {
   notifyYouTubeTabsRefresh();
 });
 
+// Stats functions (#11)
+async function refreshStats() {
+  try {
+    const stats = await YT_DLP_DB.getWatchStats({ days: 30 });
+
+    // Total all time
+    if ($('statsTotalAll')) $('statsTotalAll').textContent = stats.total.toLocaleString();
+
+    // Last 7 days
+    const now = new Date();
+    const last7 = stats.daily
+      .filter((d) => {
+        const diff = (now - new Date(d.date)) / (24 * 60 * 60 * 1000);
+        return diff <= 7;
+      })
+      .reduce((sum, d) => sum + d.count, 0);
+    if ($('statsLast7')) $('statsLast7').textContent = last7.toLocaleString();
+
+    // Last 30 days
+    const last30 = stats.daily.reduce((sum, d) => sum + d.count, 0);
+    if ($('statsLast30')) $('statsLast30').textContent = last30.toLocaleString();
+
+    // Peak day
+    if (stats.daily.length) {
+      const peak = stats.daily.reduce((a, b) => (a.count >= b.count ? a : b));
+      if ($('statsPeakDay')) $('statsPeakDay').textContent = peak.count.toLocaleString();
+      if ($('statsPeakDayDate')) $('statsPeakDayDate').textContent = peak.date;
+    } else {
+      if ($('statsPeakDay')) $('statsPeakDay').textContent = '—';
+      if ($('statsPeakDayDate')) $('statsPeakDayDate').textContent = '';
+    }
+
+    // Bar chart — last 14 days
+    renderBarChart(stats.daily, 14);
+  } catch (e) {
+    console.error('Stats error:', e);
+  }
+}
+
+function renderBarChart(dailyData, dayCount) {
+  const chart = $('statsBarChart');
+  if (!chart) return;
+  chart.innerHTML = '';
+
+  // Fill in missing days
+  const days = [];
+  const now = new Date();
+  for (let i = dayCount - 1; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const found = dailyData.find((e) => e.date === key);
+    days.push({
+      date: key,
+      label: `${d.getMonth() + 1}/${d.getDate()}`,
+      count: found?.count || 0,
+    });
+  }
+
+  const maxCount = Math.max(1, ...days.map((d) => d.count));
+
+  for (const day of days) {
+    const bar = document.createElement('div');
+    bar.className = 'statsBar';
+    const heightPct = Math.max(2, (day.count / maxCount) * 100);
+    bar.style.height = `${heightPct}%`;
+    bar.dataset.label = day.label;
+    if (day.count > 0) bar.dataset.count = String(day.count);
+    bar.title = `${day.date}: ${day.count}`;
+    chart.appendChild(bar);
+  }
+}
+
+// Sync progress listener (#9)
+chrome.runtime.onMessage?.addListener((msg) => {
+  if (msg?.type === 'SQLITE_SYNC_PROGRESS') {
+    const el = $('syncProgress');
+    if (el) el.textContent = msg.message || '';
+  }
+});
+
 (async () => {
   await loadUI();
   wireBadgeStyleUI();
   await refreshCount();
   startSqliteServerGate();
+  refreshStats();
+
+  // Advanced sync panel toggle
+  $('advancedSyncToggle')?.addEventListener('click', () => {
+    const panel = $('advancedSyncPanel');
+    const btn = $('advancedSyncToggle');
+    if (!panel || !btn) return;
+    const hidden = panel.style.display === 'none';
+    panel.style.display = hidden ? '' : 'none';
+    btn.textContent = hidden ? 'Advanced ▾' : 'Advanced ▸';
+  });
 })();
 
 /* saveStatus animation patch */

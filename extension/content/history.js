@@ -48,10 +48,19 @@
 
   // -------------------- full history import (auto-scroll) --------------------
   // Used by background.js (IMPORT_FROM_YOUTUBE_HISTORY_PAGE)
+
+  let _autoScrollAborted = false;
+
+  CS.cancelAutoScroll = function cancelAutoScroll() {
+    _autoScrollAborted = true;
+  };
+
   CS.autoScrollAndCollectHistory = async function autoScrollAndCollectHistory({ maxScrolls = 1200 } = {}) {
     if (!CS.isHistoryPage()) {
       return { ok: false, error: 'Not on /feed/history' };
     }
+
+    _autoScrollAborted = false;
 
     const seen = new Set();
     let lastHeight = 0;
@@ -70,6 +79,19 @@
     collectVisibleIds();
 
     for (let i = 0; i < maxScrolls; i++) {
+      // Check cancellation (#7)
+      if (_autoScrollAborted) {
+        const videoIds = Array.from(seen);
+        const resp = await CS.sendRuntimeMessage({ type: 'MARK_WATCHED_MANY_SKIP', videoIds, ts: Date.now() }).catch(() => null);
+        return {
+          ok: true,
+          videoIds,
+          inserted: resp?.inserted || 0,
+          scrollCount,
+          cancelled: true,
+        };
+      }
+
       window.scrollTo(0, document.documentElement.scrollHeight);
       scrollCount++;
 

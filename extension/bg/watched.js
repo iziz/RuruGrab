@@ -80,11 +80,11 @@
         const records = toInsert.map((id) => ({ id, ts }));
         const res = await YT_DLP_DB.putMany(records, { chunkSize: 2000 });
         inserted += (res?.inserted || 0);
-        // Changelog: record each new watch
-        for (const id of toInsert) {
-          await YT_DLP_DB.appendChange(id, 'watch', ts);     // ← NEW
-          BG.cacheWatched(id);
-        }
+        // Changelog: batch-record all new watches (#1 — was individual, now batched)
+        await YT_DLP_DB.appendChangeBatch(
+          toInsert.map((id) => ({ id, action: 'watch', ts }))
+        );
+        for (const id of toInsert) BG.cacheWatched(id);
       }
     }
 

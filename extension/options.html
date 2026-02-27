@@ -110,8 +110,21 @@
 
           <div class="btnRow">
             <button id="importYouTubeHistoryBtn">YouTube Watch History</button>
+            <button id="cancelYouTubeHistoryBtn" style="display:none;" class="danger">Cancel</button>
           </div>
           <p class="helpNote">Automatically scrolls the YouTube Watch History page to collect all videos. The more history you have, the longer it takes.</p>
+
+          <div class="btnRow">
+            <button id="importTakeoutBtn">Google Takeout JSON</button>
+            <input type="file" id="takeoutFile" accept=".json" style="display:none;" />
+          </div>
+          <p class="helpNote">Import watch-history.json from Google Takeout or a previously exported JSON file.</p>
+
+          <div class="btnRow">
+            <button id="importJsonBtn">Import JSON</button>
+            <input type="file" id="importJsonFile" accept=".json" style="display:none;" />
+          </div>
+          <p class="helpNote">Restore from a previously exported UtubeHolic JSON file.</p>
         </div>
 
         <!-- Export / Reset -->
@@ -145,6 +158,10 @@
           <h2>SQLite Sync</h2>
           <p class="help">Sync between local IndexedDB and server-side SQLite. The server (server.py) must be running.</p>
         </div>
+        <div class="statBadge" id="syncStatusBadge">
+          <span class="statLabel" id="syncStatusLabel">Server</span>
+          <span class="statValue" id="syncStatusValue">—</span>
+        </div>
       </div>
 
       <div class="form">
@@ -170,23 +187,70 @@
         </div>
 
         <div class="formRow">
-          <span class="label">Last success</span>
+          <span class="label">Last sync</span>
           <span class="mono muted" id="sqliteLastSuccess">—</span>
         </div>
 
-        <div class="formRow">
+        <div class="formRow" id="sqliteLastErrorRow" style="display:none;">
           <span class="label">Last error</span>
           <span class="mono muted" id="sqliteLastError">—</span>
         </div>
       </div>
 
       <div class="actions">
-        <button id="sqliteSyncNowBtn" class="primary">Sync Now</button>
-        <button id="sqliteRestoreBtn" class="danger">Restore from SQLite</button>
-        <label class="check muted" for="sqliteRestoreWipe">
-          <input type="checkbox" id="sqliteRestoreWipe" />
-          <span>Wipe IndexedDB before restore</span>
-        </label>
+        <span id="syncProgress" class="syncProgress" aria-live="polite"></span>
+        <button id="sqliteSyncNowBtn" class="primary">싱크하기</button>
+      </div>
+
+      <!-- Advanced: Full Restore -->
+      <div class="advancedToggle">
+        <button id="advancedSyncToggle" class="linkBtn" type="button">Advanced ▸</button>
+      </div>
+      <div id="advancedSyncPanel" class="advancedPanel" style="display:none;">
+        <p class="helpNote">Full restore downloads the entire server DB. Use this if sync is out of order or you're setting up a new browser.</p>
+        <div class="actions">
+          <button id="sqliteRestoreBtn" class="danger">Full Restore from Server</button>
+          <label class="check muted" for="sqliteRestoreWipe">
+            <input type="checkbox" id="sqliteRestoreWipe" />
+            <span>Wipe local DB before restore</span>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Stats ── -->
+    <section class="card" id="statsSection">
+      <div class="sectionTag"><span class="sectionDot"></span>Statistics</div>
+      <div class="cardHead">
+        <div class="cardTitleBlock">
+          <h2>Watch Statistics</h2>
+          <p class="help">Overview of your watch history from the last 30 days.</p>
+        </div>
+        <div class="statBadge">
+          <span class="statLabel">Total all time</span>
+          <span class="statValue" id="statsTotalAll">—</span>
+        </div>
+      </div>
+      <div id="statsContent" class="statsContent">
+        <div class="statsRow">
+          <div class="statCard">
+            <span class="statCardLabel">Last 7 days</span>
+            <span class="statCardValue" id="statsLast7">—</span>
+          </div>
+          <div class="statCard">
+            <span class="statCardLabel">Last 30 days</span>
+            <span class="statCardValue" id="statsLast30">—</span>
+          </div>
+          <div class="statCard">
+            <span class="statCardLabel">Peak day</span>
+            <span class="statCardValue" id="statsPeakDay">—</span>
+            <span class="statCardSub" id="statsPeakDayDate"></span>
+          </div>
+        </div>
+        <div class="statsBarSection">
+          <p class="statsBarTitle">Daily (last 14 days)</p>
+          <div id="statsBarChart" class="statsBarChart"></div>
+        </div>
       </div>
     </section>
 
@@ -197,6 +261,7 @@
 
   </main>
 
+  <script src="constants.js"></script>
   <script src="db.js"></script>
   <script src="options.js"></script>
 </body>

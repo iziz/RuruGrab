@@ -37,6 +37,27 @@
           return res;
         }
 
+        case 'CANCEL_YOUTUBE_HISTORY_SCROLL': {
+          // Forward cancel to the YouTube history tab (#7)
+          const tabs = await new Promise((resolve) => {
+            chrome.tabs.query({ url: '*://www.youtube.com/feed/history*' }, (t) => resolve(t || []));
+          });
+          for (const t of tabs) {
+            if (t.id) BG.safeTabsSendMessage(t.id, { type: 'CANCEL_AUTO_SCROLL' });
+          }
+          return { ok: true };
+        }
+
+        case 'IMPORT_TAKEOUT': {
+          // Google Takeout JSON import (#10)
+          try {
+            const res = await BG.importFromTakeoutJson(msg.jsonText || '');
+            return { ok: true, ...res };
+          } catch (e) {
+            return { ok: false, error: String(e?.message || e) };
+          }
+        }
+
         case 'SQLITE_APPLY_SETTINGS':
           await BG.reapplySqliteAlarms();
           return { ok: true };

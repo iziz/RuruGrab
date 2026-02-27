@@ -2,6 +2,12 @@
 (() => {
   const BG = self.UTH_BG;
 
+  // -------------------- debug logging (#5) --------------------
+  BG.DEBUG = false;
+  BG.dbg = function dbg(...args) {
+    if (BG.DEBUG) console.debug('[UTH:BG]', ...args);
+  };
+
   // -------------------- Promise-safe messaging --------------------
   BG.tabsSendMessage = function tabsSendMessage(tabId, message, options) {
     return new Promise((resolve, reject) => {

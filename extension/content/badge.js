@@ -4,22 +4,12 @@
 
   function applyInlineBadgeStyles(badge) {
     if (!(badge instanceof HTMLElement)) return;
-    badge.style.position = 'absolute';
-    badge.style.top = '8px';
-    badge.style.left = '8px';
-    badge.style.zIndex = '2147483647';
-    badge.style.padding = '3px 7px';
-    badge.style.borderRadius = '999px';
-    badge.style.fontSize = '9px';
-    badge.style.lineHeight = '1';
-    badge.style.letterSpacing = '0.2px';
-    badge.style.fontWeight = '700';
+    // Base styles are now in content.css (#8) — only dynamic colors here
     badge.style.backgroundColor = String(CS.settings.badgeBgColor || CS.DEFAULT_SETTINGS.badgeBgColor);
     badge.style.color = String(CS.settings.badgeTextColor || CS.DEFAULT_SETTINGS.badgeTextColor);
-    badge.style.border = `1px solid ${String(CS.settings.badgeBorderColor || CS.DEFAULT_SETTINGS.badgeBorderColor)}`;
-    badge.style.pointerEvents = 'none';
-    badge.style.userSelect = 'none';
-    badge.style.whiteSpace = 'nowrap';
+    badge.style.borderStyle = 'solid';
+    badge.style.borderWidth = '1px';
+    badge.style.borderColor = String(CS.settings.badgeBorderColor || CS.DEFAULT_SETTINGS.badgeBorderColor);
   }
 
   function findBadgeHost(renderer) {
