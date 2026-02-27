@@ -1,0 +1,28 @@
+{
+  "collision": "suffix",
+  "organizerRegex": "^([A-Za-z0-9]{2,8})-(.+)",
+  "renamerRules": [
+    {
+      "name": "remove tags",
+      "pattern": "(?i)(?:twojav\\.com@|4k2\\.me@|h_1711|coser@|4k2\\.com@|hhd800\\.com@|h_1127|169bbs\\.com@|\\.fhd|169bbs1\\.com@|_fhd)",
+      "replace": "",
+      "apply_to": "stem"
+    },
+    {
+      "name": "rebuild name",
+      "pattern": "^([A-Za-z]{2,5})-([0-9]{3,5}).*$",
+      "replace": "\\1-\\2",
+      "apply_to": "stem",
+      "case": "upper"
+    },
+    {
+      "name": "add postfix",
+      "pattern": "(?i)(?<!-360vr)$",
+      "replace": "-360VR",
+      "apply_to": "stem",
+      "case": "upper",
+      "when_contains": "VR",
+      "contains_ignore_case": true
+    }
+  ]
+}

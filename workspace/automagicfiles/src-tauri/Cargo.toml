@@ -1,0 +1,25 @@
+[package]
+name = "organizer_tauri"
+version = "0.1.0"
+description = "Organizer (Tauri) - Ported from PySide6"
+authors = ["Sol"]
+edition = "2021"
+
+[lib]
+name = "organizer_tauri"
+crate-type = ["cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+regex = "1"
+fancy-regex = "0.13"
+
+[[bin]]
+name = "AutomagicFiles"
+path = "src/main.rs"
