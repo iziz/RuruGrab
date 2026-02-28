@@ -1301,11 +1301,21 @@ function renRenderTargets() {
     else if (res.startsWith('ERR')) resHtml = `<span style="color:var(--danger);font-weight:bold;" title="${renEscapeHtml(res)}">❌</span>`
     else if (res) resHtml = renEscapeHtml(res)
     const checked = selectedTargetIdx.has(i) ? 'checked' : ''
+    const sameName = cur === prev
+    const toLabel = sameName ? 'SAME' : 'TO'
+    const toStateClass = sameName ? ' is-same' : ''
     rows.push(`<tr data-idx="${i}">
       <td><input type="checkbox" ${checked} /></td>
       <td>
-        <div class="ren-target-name ren-target-current">${renEscapeHtml(cur)}</div>
-        <div class="ren-target-name ren-target-preview text-muted">${renEscapeHtml(prev)}</div>
+        <div class="ren-target-block ren-target-from">
+          <span class="ren-target-label">FROM</span>
+          <div class="ren-target-name">${renEscapeHtml(cur)}</div>
+        </div>
+        <div class="ren-target-arrow" aria-hidden="true">↓</div>
+        <div class="ren-target-block ren-target-to${toStateClass}">
+          <span class="ren-target-label">${toLabel}</span>
+          <div class="ren-target-name">${renEscapeHtml(prev)}</div>
+        </div>
       </td>
       <td style="text-align:center;">${resHtml}</td>
     </tr>`)
