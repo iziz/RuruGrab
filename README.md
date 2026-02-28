@@ -39,20 +39,7 @@ RuruGrab is a **Chrome / Edge** solution that combines a **browser extension** a
 - Sync between **Extension** () and a **Core App**.
 - The extension expects a sync server reachable at `http://127.0.0.1:5000` (default).
 
-
-## README Screenshot Playbook
-
-If you want to attach screenshots for each feature in GitHub README, use this flow:
-
-1. Save all screenshots under `docs/screenshots/`.
-2. Use stable filenames by feature (for example: `extension-options-badge-settings.png`, `app-renamer-tab.png`).
-3. Keep a consistent window size and language.
-4. Add screenshots to this README using Markdown image links.
-
-Detailed naming/checklist guide: `docs/screenshots/README.md`
-
 ## Screenshots
-
 ### Extension
 #### YouTube WATCHED Mark
 <img src="docs/screenshots/extension-preview.png" width="640"/>
