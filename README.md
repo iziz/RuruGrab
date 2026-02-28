@@ -12,6 +12,30 @@ RuruGrab is a **Chrome / Edge** solution that combines a **browser extension** a
 - Batch move files into folders based on **filename rules**
 - Optionally sync watch history across browsers via a **local/SQLite sync** workflow
 
+## Screenshots
+### Extension
+#### YouTube WATCHED Mark
+<img src="docs/screenshots/extension-preview.png" width="640"/>
+
+#### Options - Badge Settings
+<img src="docs/screenshots/extension-settings-1.png" width="640"/>
+
+#### Options - Migration & Backup
+<img src="docs/screenshots/extension-settings-2.png" width="640"/>
+
+#### Options - SQLite Sync (Deskop application)
+<img src="docs/screenshots/extension-settings-3.png" width="640"/>
+
+### App
+#### Downloader Tab
+<img src="docs/screenshots/app-download.png" width="640"/>
+
+#### Renamer Tab
+<img src="docs/screenshots/app-renamer.png" width="640"/>
+
+#### Organizer Tab
+<img src="docs/screenshots/app-organizer.png" width="640"/>
+
 > **Repo layout**
 > - `extension/` — Browser Extension (Manifest V3)
 > - `app/` — Core App (Tauri v2 + Vite)
@@ -38,31 +62,6 @@ RuruGrab is a **Chrome / Edge** solution that combines a **browser extension** a
 ### Optional Sync (SQLite)
 - Sync between **Extension** () and a **Core App**.
 - The extension expects a sync server reachable at `http://127.0.0.1:5000` (default).
-
-## Screenshots
-### Extension
-#### YouTube WATCHED Mark
-<img src="docs/screenshots/extension-preview.png" width="640"/>
-
-#### Options - Badge Settings
-<img src="docs/screenshots/extension-settings-1.png" width="640"/>
-
-#### Options - Migration & Backup
-<img src="docs/screenshots/extension-settings-2.png" width="640"/>
-
-#### Options - SQLite Sync (Deskop application)
-<img src="docs/screenshots/extension-settings-3.png" width="640"/>
-
-### App
-#### Downloader Tab
-<img src="docs/screenshots/app-download.png" width="640"/>
-
-#### Renamer Tab
-<img src="docs/screenshots/app-renamer.png" width="640"/>
-
-#### Organizer Tab
-<img src="docs/screenshots/app-organizer.png" width="640"/>
-
 
 ## Architecture
 
