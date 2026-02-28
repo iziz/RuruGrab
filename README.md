@@ -39,46 +39,29 @@ RuruGrab is a **Chrome / Edge** solution that combines a **browser extension** a
 - Sync between **Extension** () and a **Core App**.
 - The extension expects a sync server reachable at `http://127.0.0.1:5000` (default).
 
-
-## README Screenshot Playbook
-
-If you want to attach screenshots for each feature in GitHub README, use this flow:
-
-1. Save all screenshots under `docs/screenshots/`.
-2. Use stable filenames by feature (for example: `extension-options-badge-settings.png`, `app-renamer-tab.png`).
-3. Keep a consistent window size and language.
-4. Add screenshots to this README using Markdown image links.
-
-Detailed naming/checklist guide: `docs/screenshots/README.md`
-
-### Markdown template (copy/paste)
-
-```md
 ## Screenshots
-
 ### Extension
 #### YouTube WATCHED Mark
-![Extension - YouTube WATCHED Mark](docs/screenshots/extension-youtube-watched-mark.png)
+<img src="docs/screenshots/extension-preview.png" width="640"/>
 
 #### Options - Badge Settings
-![Extension - Options Badge Settings](docs/screenshots/extension-options-badge-settings.png)
+<img src="docs/screenshots/extension-settings-1.png" width="640"/>
 
 #### Options - Migration & Backup
-![Extension - Options Migration Backup](docs/screenshots/extension-options-migration-backup.png)
+<img src="docs/screenshots/extension-settings-2.png" width="640"/>
 
-#### Options - SQLite Sync
-![Extension - Options SQLite Sync](docs/screenshots/extension-options-sqlite-sync.png)
+#### Options - SQLite Sync (Deskop application)
+<img src="docs/screenshots/extension-settings-3.png" width="640"/>
 
 ### App
 #### Downloader Tab
-![App - Downloader Tab](docs/screenshots/app-downloader-tab.png)
+<img src="docs/screenshots/app-download.png" width="640"/>
 
 #### Renamer Tab
-![App - Renamer Tab](docs/screenshots/app-renamer-tab.png)
+<img src="docs/screenshots/app-renamer.png" width="640"/>
 
 #### Organizer Tab
-![App - Organizer Tab](docs/screenshots/app-organizer-tab.png)
-```
+<img src="docs/screenshots/app-organizer.png" width="640"/>
 
 
 ## Architecture
