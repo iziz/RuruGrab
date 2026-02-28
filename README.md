@@ -51,34 +51,30 @@ If you want to attach screenshots for each feature in GitHub README, use this fl
 
 Detailed naming/checklist guide: `docs/screenshots/README.md`
 
-### Markdown template (copy/paste)
-
-```md
 ## Screenshots
 
 ### Extension
 #### YouTube WATCHED Mark
-![Extension - YouTube WATCHED Mark](docs/screenshots/extension-youtube-watched-mark.png)
+<img src="docs/screenshots/extension-preview.png" width="640"/>
 
 #### Options - Badge Settings
-![Extension - Options Badge Settings](docs/screenshots/extension-options-badge-settings.png)
+<img src="docs/screenshots/extension-settings-1.png" width="640"/>
 
 #### Options - Migration & Backup
-![Extension - Options Migration Backup](docs/screenshots/extension-options-migration-backup.png)
+<img src="docs/screenshots/extension-settings-2.png" width="640"/>
 
-#### Options - SQLite Sync
-![Extension - Options SQLite Sync](docs/screenshots/extension-options-sqlite-sync.png)
+#### Options - SQLite Sync (Deskop application)
+<img src="docs/screenshots/extension-settings-3.png" width="640"/>
 
 ### App
 #### Downloader Tab
-![App - Downloader Tab](docs/screenshots/app-downloader-tab.png)
+<img src="docs/screenshots/app-download.png" width="640"/>
 
 #### Renamer Tab
-![App - Renamer Tab](docs/screenshots/app-renamer-tab.png)
+<img src="docs/screenshots/app-renamer.png" width="640"/>
 
 #### Organizer Tab
-![App - Organizer Tab](docs/screenshots/app-organizer-tab.png)
-```
+<img src="docs/screenshots/app-organizer.png" width="640"/>
 
 
 ## Architecture
