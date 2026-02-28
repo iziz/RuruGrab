@@ -67,7 +67,7 @@ export const renamerTab = `
           <thead>
             <tr>
               <th style="width:36px;"></th>
-              <th>Name Preview</th>
+              <th>From / To</th>
               <th style="width:14px;"></th>
             </tr>
           </thead>

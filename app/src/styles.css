@@ -899,14 +899,55 @@ table.preview-table tr.selected>td {
 }
 
 
+.ren-target-block {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-base);
+}
+
+.ren-target-block + .ren-target-block {
+  margin-top: 4px;
+}
+
+.ren-target-label {
+  display: inline-flex;
+  min-width: 34px;
+  justify-content: center;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+}
+
 .ren-target-name {
   line-height: 1.35;
   word-break: break-all;
+  font-family: var(--font-mono, monospace);
 }
 
-.ren-target-preview {
-  margin-top: 2px;
+.ren-target-arrow {
+  margin: 2px 0;
+  padding-left: 16px;
+  color: var(--text-muted);
   font-size: 12px;
+}
+
+.ren-target-to {
+  border-color: color-mix(in oklab, var(--success) 26%, var(--border));
+  background: color-mix(in oklab, var(--success) 8%, var(--bg-base));
+}
+
+.ren-target-to.is-same {
+  border-color: var(--border);
+  background: var(--bg-base);
 }
 
 /* Organizer preview tree */
