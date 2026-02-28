@@ -46,7 +46,7 @@
     try {
       await BG.tabsSendMessage(
         tabId,
-        { type: 'UTUBEHOLIC_TOAST', text: String(text || ''), kind },
+        { type: 'RURUGRAB_TOAST', text: String(text || ''), kind },
         { frameId: 0 } // ✅ top frame
       );
       return true;

@@ -980,10 +980,10 @@ if (dom.videoUrl) {
 // Tauri event listeners
 ; (async () => {
   try {
-    await listen('utubeholic:log', (e) => {
+    await listen('rurugrab:log', (e) => {
       if (typeof e.payload === 'string') appendLog(e.payload)
     })
-    await listen('utubeholic:status', (e) => {
+    await listen('rurugrab:status', (e) => {
       updateStatusUI(e.payload || {})
     })
   } catch (e) {

@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "UtubeHolic",
+  "name": "RuruGrab",
   "version": "2.2.5",
   "description": "Grab like a cat from Youtube, Twitter(X), Instagram",
   "permissions": [
@@ -100,5 +100,5 @@
     "128": "icons/icon128.png",
     "256": "icons/icon256.png"
   },
-  "short_name": "UtubeHolic"
+  "short_name": "RuruGrab"
 }

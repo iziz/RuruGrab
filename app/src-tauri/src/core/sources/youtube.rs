@@ -65,7 +65,7 @@ pub fn build_args(
     "--print".into(),
     "after_move:filepath".into(),
     "--print".into(),
-    "before_dl:utubeholic_meta:%(title)s::%(duration_string)s::%(uploader)s::%(resolution)s::%(fps)s::%(tbr)s"
+    "before_dl:rurugrab_meta:%(title)s::%(duration_string)s::%(uploader)s::%(resolution)s::%(fps)s::%(tbr)s"
       .into(),
   ];
 
@@ -100,8 +100,8 @@ pub fn build_meta_args(cookie_path: Option<&Path>, url: &str) -> Vec<String> {
 }
 
 pub fn parse_stdout(line: &str) -> StdoutEvent {
-  // utubeholic_meta:title::duration::uploader::resolution::fps::tbr
-  if let Some(meta) = line.strip_prefix("utubeholic_meta:") {
+  // rurugrab_meta:title::duration::uploader::resolution::fps::tbr
+  if let Some(meta) = line.strip_prefix("rurugrab_meta:") {
     let parts: Vec<&str> = meta.split("::").collect();
     if parts.len() >= 6 {
       let title: String = parts[0].nfc().collect();

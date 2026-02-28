@@ -85,7 +85,7 @@ impl AppState {
     let line = line.into();
     self.log.push(line.clone());
     if let Some(h) = self.app_handle.lock().as_ref() {
-      let _ = h.emit("utubeholic:log", line);
+      let _ = h.emit("rurugrab:log", line);
     }
   }
 
@@ -112,7 +112,7 @@ impl AppState {
 
     if let Some(h) = self.app_handle.lock().as_ref() {
       let st = self.status_snapshot();
-      let _ = h.emit("utubeholic:status", st);
+      let _ = h.emit("rurugrab:status", st);
     }
   }
 

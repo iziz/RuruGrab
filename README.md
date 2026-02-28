@@ -95,7 +95,7 @@ Detailed naming/checklist guide: `docs/screenshots/README.md`
   - Import/export/reset watch DB
   - SQLite sync configuration (server URL, interval, manual sync/restore)
 
-> Extension name: **UtubeHolic** (current version in manifest: **2.2.5**)
+> Extension name: **RuruGrab** (current version in manifest: **2.2.5**)
 
 ### 2) Core App (`app/`) — Tauri v2 + Vite
 - Frontend: **Vite**
