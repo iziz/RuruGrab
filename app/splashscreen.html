@@ -39,11 +39,25 @@
       justify-content: center;
     }
 
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 0 0 12px;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      object-fit: contain;
+      filter: drop-shadow(0 4px 10px rgba(15, 23, 42, 0.45));
+    }
+
     .title {
       font-size: 20px;
       font-weight: 700;
       letter-spacing: 0.5px;
-      margin: 0 0 12px;
+      margin: 0;
       color: #fff;
     }
 
@@ -102,7 +116,10 @@
 
 <body>
   <div class="card">
-    <div class="title">RuruGrab</div>
+    <div class="brand">
+      <img class="brand-icon" src="./src-tauri/resources/RuruGrab.ico" alt="RuruGrab icon" />
+      <div class="title">RuruGrab</div>
+    </div>
     <p class="sub">RuruGrab is a browser-integrated media solution consisting of a Chrome/Edge Extension and a Core App.
       It enables seamless Image & Video downloads from major social platforms and provides a Cross-browser YouTube Watch
       History sync and marking system.</p>
