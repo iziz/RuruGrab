@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "UtubeHolic",
+  "productName": "RuruGrab",
   "version": "0.1.0",
-  "identifier": "com.utubeholic",
+  "identifier": "com.rurugrab",
   "build": {
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build",
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "splashscreen",
-        "title": "UtubeHolic",
+        "title": "RuruGrab",
         "url": "/splashscreen.html",
         "resizable": false,
         "skipTaskbar": true,
@@ -29,7 +29,7 @@
         "backgroundColor": "#0f172a"
       },
       {
-        "title": "UtubeHolic",
+        "title": "RuruGrab",
         "width": 1100,
         "height": 720,
         "resizable": true,
@@ -46,7 +46,7 @@
     "active": true,
     "targets": "all",
     "icon": [
-      "resources/UtubeHolic.ico"
+      "resources/RuruGrab.ico"
     ],
     "externalBin": [
       "../binaries/yt-dlp",

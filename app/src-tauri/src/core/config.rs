@@ -19,16 +19,16 @@ impl Config {
     let download_dir = env::var("UTUBEHOLIC_DOWNLOAD_DIR")
       .map(PathBuf::from)
       .unwrap_or_else(|_| {
-        // default: <home>/Downloads/UtubeHolic
+        // default: <home>/Downloads/RuruGrab
         let home = dirs_next::home_dir().unwrap_or_else(|| PathBuf::from("."));
-        home.join("Downloads").join("UtubeHolic")
+        home.join("Downloads").join("RuruGrab")
       });
 
     let sqlite_path = env::var("UTUBEHOLIC_SQLITE_PATH")
       .map(PathBuf::from)
       .unwrap_or_else(|_| {
         let home = dirs_next::home_dir().unwrap_or_else(|| PathBuf::from("."));
-        home.join(".utubeholic").join("watched.sqlite3")
+        home.join(".rurugrab").join("watched.sqlite3")
       });
 
     Ok(Self { bind, download_dir, sqlite_path })

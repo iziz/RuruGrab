@@ -758,7 +758,7 @@ $('exportBtn').addEventListener('click', async () => {
 
   const a = document.createElement('a');
   a.href = url;
-  a.download = `utubeholic-watched-export-${Date.now()}.json`;
+  a.download = `rurugrab-watched-export-${Date.now()}.json`;
   a.click();
 
   setTimeout(() => URL.revokeObjectURL(url), 1500);

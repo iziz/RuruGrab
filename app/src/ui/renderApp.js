@@ -7,7 +7,7 @@ import { renamerTab } from './tabs/renamerTab'
 export function renderApp(root) {
   root.innerHTML = `
     <header class="app-header">
-      <h1>UtubeHolic</h1>
+      <h1>RuruGrab</h1>
       <span class="version">1.0.0</span>
     </header>
 
