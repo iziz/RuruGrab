@@ -21,12 +21,12 @@ importScripts(
 (() => {
   const BG = self.UTH_BG;
 
-  BG.CM_ROOT = 'utubeholic_root';
-  BG.CM_DOWNLOAD = 'utubeholic_download';
-  BG.CM_MARK = 'utubeholic_mark_watched';
-  BG.CM_UNMARK = 'utubeholic_unmark_watched';
+  BG.CM_ROOT = 'rurugrab_root';
+  BG.CM_DOWNLOAD = 'rurugrab_download';
+  BG.CM_MARK = 'rurugrab_mark_watched';
+  BG.CM_UNMARK = 'rurugrab_unmark_watched';
 
-  BG.SQLITE_ALARM_NAME = 'utubeholic_sqlite_sync';
+  BG.SQLITE_ALARM_NAME = 'rurugrab_sqlite_sync';
 
   // From constants.js (loaded above)
   BG.DEFAULT_SQLITE_SYNC = UTH_CONSTANTS.DEFAULT_SQLITE_SYNC;

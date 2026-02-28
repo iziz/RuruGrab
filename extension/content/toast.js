@@ -6,10 +6,10 @@
   globalThis.__UTH_TOAST_INIT = true;
   
   function ensureRoot() {
-    let root = document.getElementById('utubeholic-toast-root');
+    let root = document.getElementById('rurugrab-toast-root');
     if (!root) {
       root = document.createElement('div');
-      root.id = 'utubeholic-toast-root';
+      root.id = 'rurugrab-toast-root';
       root.style.position = 'fixed';
       root.style.top = '12px';
       root.style.right = '12px';

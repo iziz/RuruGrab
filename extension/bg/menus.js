@@ -21,7 +21,7 @@
       chrome.contextMenus.removeAll(() => {
         const parentId = chrome.contextMenus.create({
           id: BG.CM_ROOT,
-          title: 'UtubeHolic',
+          title: 'RuruGrab',
           contexts: DL_CONTEXTS,
           documentUrlPatterns: DL_PATTERNS,
         });

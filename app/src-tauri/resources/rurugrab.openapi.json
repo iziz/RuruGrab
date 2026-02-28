@@ -1,9 +1,9 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "UtubeHolic Local Server API",
+    "title": "RuruGrab Local Server API",
     "version": "1.0.0",
-    "description": "Local-only Flask server used by UtubeHolic Chrome extension and the GUI app. Base URL is bound to 127.0.0.1."
+    "description": "Local-only Flask server used by RuruGrab Chrome extension and the GUI app. Base URL is bound to 127.0.0.1."
   },
   "servers": [
     {
