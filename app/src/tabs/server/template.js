@@ -1,4 +1,4 @@
-export const serverTab = `
+export const template = `
 <section id="tab-server" class="tab-panel active">
   <div class="card">
     <div class="card-title">Server Status</div>

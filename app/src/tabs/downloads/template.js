@@ -1,4 +1,4 @@
-export const downloadsTab = `
+export const template = `
 <section id="tab-downloads" class="tab-panel">
   <div class="card">
     <div class="card-title">Add</div>

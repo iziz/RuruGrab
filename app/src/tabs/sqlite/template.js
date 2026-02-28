@@ -1,4 +1,4 @@
-export const sqliteTab = `
+export const template = `
 <section id="tab-sqlite" class="tab-panel">
   <div class="card">
     <div class="card-title">Filter & Stats</div>

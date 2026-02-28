@@ -46,8 +46,11 @@
     "active": true,
     "targets": "all",
     "icon": [
-      "resources/RuruGrab.ico"
+      "resources/app.ico"
     ],
+    "resources": {
+      "../../extension/**/*": "extension/"
+    },
     "externalBin": [
       "../binaries/yt-dlp",
       "../binaries/ffmpeg",

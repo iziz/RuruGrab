@@ -1,4 +1,4 @@
-export const renamerTab = `
+export const template = `
 <section id="tab-renamer" class="tab-panel renamer-panel">
   <div style="display:flex;flex-direction:row;gap:12px;flex:1;min-height:0;overflow:hidden;">
     <div style="flex:7;display:flex;flex-direction:column;gap:12px;min-width:0;min-height:0;">

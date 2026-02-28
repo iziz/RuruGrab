@@ -1,8 +1,8 @@
-import { serverTab } from './tabs/serverTab'
-import { downloadsTab } from './tabs/downloadsTab'
-import { sqliteTab } from './tabs/sqliteTab'
-import { organizerTab } from './tabs/organizerTab'
-import { renamerTab } from './tabs/renamerTab'
+import { template as serverTemplate }    from '../tabs/server/template.js'
+import { template as downloadsTemplate } from '../tabs/downloads/template.js'
+import { template as sqliteTemplate }    from '../tabs/sqlite/template.js'
+import { template as organizerTemplate } from '../tabs/organizer/template.js'
+import { template as renamerTemplate }   from '../tabs/renamer/template.js'
 
 export function renderApp(root) {
   root.innerHTML = `
@@ -19,11 +19,11 @@ export function renderApp(root) {
       <button class="tab-btn" data-tab="renamer">ReNamer</button>
     </nav>
 
-    ${serverTab}
-    ${downloadsTab}
-    ${sqliteTab}
-    ${organizerTab}
-    ${renamerTab}
+    ${serverTemplate}
+    ${downloadsTemplate}
+    ${sqliteTemplate}
+    ${organizerTemplate}
+    ${renamerTemplate}
 
     <div id="ctxMenu" class="ctx-menu">
       <button class="ctx-menu-item" data-action="cancel">Cancel</button>

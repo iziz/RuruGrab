@@ -1,4 +1,4 @@
-export const organizerTab = `
+export const template = `
 <section id="tab-organizer" class="tab-panel organizer-panel">
   <div class="org-left">
     <div class="card">
