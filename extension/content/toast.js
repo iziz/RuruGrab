@@ -66,7 +66,7 @@
   }
 
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-    if (msg?.type === 'UTUBEHOLIC_TOAST') {
+    if (msg?.type === 'RURUGRAB_TOAST' || msg?.type === 'UTUBEHOLIC_TOAST') {
       showToast(msg.text, msg.kind);
       sendResponse?.({ ok: true });
       return true;

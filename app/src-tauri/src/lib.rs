@@ -71,7 +71,7 @@ pub fn run() {
     Ok(c) => c,
     Err(e) => {
       eprintln!("[FATAL] configuration error: {e}");
-      eprintln!("Hint: check UTUBEHOLIC_BIND, UTUBEHOLIC_DOWNLOAD_DIR, UTUBEHOLIC_SQLITE_PATH");
+      eprintln!("Hint: check RURUGRAB_BIND, RURUGRAB_DOWNLOAD_DIR, RURUGRAB_SQLITE_PATH (legacy UTUBEHOLIC_* also supported)");
       std::process::exit(1);
     }
   };
