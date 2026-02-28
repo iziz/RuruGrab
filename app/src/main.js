@@ -1287,7 +1287,7 @@ function renRenderRules() {
 function renRenderTargets() {
   if (!ren.targetsBody) return
   if (renTargets.length === 0) {
-    ren.targetsBody.innerHTML = `<tr><td colspan="4" class="text-muted">Add files to get started.</td></tr>`
+    ren.targetsBody.innerHTML = `<tr><td colspan="3" class="text-muted">Add files to get started.</td></tr>`
     return
   }
   const rows = []
@@ -1303,8 +1303,10 @@ function renRenderTargets() {
     const checked = selectedTargetIdx.has(i) ? 'checked' : ''
     rows.push(`<tr data-idx="${i}">
       <td><input type="checkbox" ${checked} /></td>
-      <td>${renEscapeHtml(cur)}</td>
-      <td class="text-muted">${renEscapeHtml(prev)}</td>
+      <td>
+        <div class="ren-target-name ren-target-current">${renEscapeHtml(cur)}</div>
+        <div class="ren-target-name ren-target-preview text-muted">${renEscapeHtml(prev)}</div>
+      </td>
       <td style="text-align:center;">${resHtml}</td>
     </tr>`)
   }

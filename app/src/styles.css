@@ -898,6 +898,17 @@ table.preview-table tr.selected>td {
   background: rgba(0, 122, 204, 0.15);
 }
 
+
+.ren-target-name {
+  line-height: 1.35;
+  word-break: break-all;
+}
+
+.ren-target-preview {
+  margin-top: 2px;
+  font-size: 12px;
+}
+
 /* Organizer preview tree */
 .group-header-row td {
   background: var(--bg-elevated);
