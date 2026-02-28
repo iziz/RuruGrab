@@ -3,11 +3,15 @@ import { template as downloadsTemplate } from '../tabs/downloads/template.js'
 import { template as sqliteTemplate }    from '../tabs/sqlite/template.js'
 import { template as organizerTemplate } from '../tabs/organizer/template.js'
 import { template as renamerTemplate }   from '../tabs/renamer/template.js'
+import appIcon from '../../src-tauri/resources/app.ico'
 
 export function renderApp(root) {
   root.innerHTML = `
     <header class="app-header">
-      <h1>RuruGrab</h1>
+      <div class="app-brand">
+        <img class="app-icon" src="${appIcon}" alt="RuruGrab app icon" />
+        <h1>RuruGrab</h1>
+      </div>
       <span class="version">1.0.0</span>
     </header>
 

@@ -68,6 +68,18 @@ body {
   letter-spacing: -0.3px;
 }
 
+.app-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
 .app-header .version {
   font-size: 11px;
   color: var(--text-muted);
