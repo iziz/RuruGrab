@@ -16,8 +16,8 @@ export const template = `
       </div>
 
       <div class="mt-12 flex-row gap-8">
-        <button class="btn btn-default btn-sm" id="orgBtnScan" style="flex:1;">Rescan</button>
-        <button class="btn btn-primary btn-sm" id="orgBtnRun" style="flex:1;">Run</button>
+        <button class="btn btn-default btn-sm" id="orgBtnScan" style="flex:3;">Rescan</button>
+        <button class="btn btn-primary btn-sm" id="orgBtnRun" style="flex:7;">Run</button>
       </div>
 
       <div class="mt-12">
