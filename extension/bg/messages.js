@@ -83,16 +83,6 @@
           }
         }
 
-        case 'SQLITE_FULL_UPLOAD': {
-          try {
-            const res = await BG.fullSyncToServer();
-            return { ok: true, ...res };
-          } catch (e) {
-            await BG.setSqliteStatus({ error: String(e) });
-            return { ok: false, error: String(e) };
-          }
-        }
-
         default:
           return { ok: false, error: 'Unknown message type' };
       }

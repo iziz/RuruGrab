@@ -295,26 +295,12 @@ function _applySqliteGateUI({ ok, reason }) {
   _sqliteServerOk = !!ok;
 
   const syncBtn = $('sqliteSyncNowBtn');
-  const restoreBtn = $('sqliteRestoreBtn');
-  const fullUploadBtn = $('sqliteFullUploadBtn');
 
   if (syncBtn) {
     if (_sqliteSyncNowBtnLabel == null) _sqliteSyncNowBtnLabel = syncBtn.textContent;
     syncBtn.disabled = !_sqliteServerOk;
     syncBtn.title = _sqliteServerOk ? '' : `Only available when the server (server.py) is running. (${reason || 'unreachable'})`;
     syncBtn.textContent = _sqliteSyncNowBtnLabel;
-  }
-
-  if (restoreBtn) {
-    if (_sqliteRestoreBtnLabel == null) _sqliteRestoreBtnLabel = restoreBtn.textContent;
-    restoreBtn.disabled = !_sqliteServerOk;
-    restoreBtn.title = _sqliteServerOk ? '' : `Only available when the server (server.py) is running. (${reason || 'unreachable'})`;
-    restoreBtn.textContent = _sqliteRestoreBtnLabel;
-  }
-
-  if (fullUploadBtn) {
-    fullUploadBtn.disabled = !_sqliteServerOk;
-    fullUploadBtn.title = _sqliteServerOk ? '' : `Only available when the server (server.py) is running. (${reason || 'unreachable'})`;
   }
 
   // Update status badge
@@ -604,52 +590,6 @@ $('sqliteSyncNowBtn')?.addEventListener('click', async () => {
   if (resp.pulled > 0 || resp.forcedFull) notifyYouTubeTabsRefresh();
 });
 
-$('sqliteRestoreBtn')?.addEventListener('click', async () => {
-  const wipe = !!$('sqliteRestoreWipe')?.checked;
-  const ok = confirm(wipe
-    ? 'Full restore: wipe local DB and download everything from server.\nContinue?'
-    : 'Full restore: merge server data with existing local DB.\nContinue?');
-  if (!ok) return;
-
-  log('Starting full restore from server...');
-  const resp = await sendRuntimeMessage({ type: 'SQLITE_RESTORE', wipe }).catch((e) => ({ ok: false, error: String(e) }));
-  // Clear progress
-  const progressEl = $('syncProgress');
-  if (progressEl) progressEl.textContent = '';
-
-  if (!resp?.ok) log(`Failed: ${resp?.error || 'unknown error'}`);
-  else log(`Done: restored ${resp.restored?.toLocaleString?.() ?? resp.restored} items (server total: ${resp.rowCount?.toLocaleString?.() ?? resp.rowCount})`);
-  await refreshCount();
-  await refreshSqliteStatus();
-  await refreshStats();
-  notifyYouTubeTabsRefresh();
-});
-
-$('sqliteFullUploadBtn')?.addEventListener('click', async () => {
-  const localCount = await YT_DLP_DB.count().catch(() => 0);
-  const ok = confirm(`Full upload: push all ${localCount.toLocaleString()} local records to the server.\nThis may take a while. Continue?`);
-  if (!ok) return;
-
-  const btn = $('sqliteFullUploadBtn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Uploading...'; }
-
-  log(`Starting full upload (${localCount.toLocaleString()} local records)...`);
-  const resp = await sendRuntimeMessage({ type: 'SQLITE_FULL_UPLOAD' }).catch((e) => ({ ok: false, error: String(e) }));
-
-  if (btn) { btn.disabled = !_sqliteServerOk; btn.textContent = 'Full Upload to Server'; }
-
-  const progressEl = $('syncProgress');
-  if (progressEl) progressEl.textContent = '';
-
-  if (!resp?.ok) {
-    log(`Failed: ${resp?.error || 'unknown error'}`);
-  } else {
-    const fmt = (v) => Number.isFinite(Number(v)) ? Number(v).toLocaleString('en-US') : '?';
-    log(`Done: ↑ uploaded ${fmt(resp.pushed)} records · server total: ${fmt(resp.serverCount)}`);
-  }
-
-  await refreshSqliteStatus();
-});
 
 $('importHistoryAllBtn').addEventListener('click', async () => {
   const includeShorts = $('historyIncludeShorts').checked;

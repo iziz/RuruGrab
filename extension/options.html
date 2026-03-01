@@ -1,18 +1,20 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>RuruGrab Settings</title>
   <link rel="stylesheet" href="options.css" />
 </head>
+
 <body>
   <main class="wrap">
 
     <!-- ── Header ── -->
     <header class="top">
       <div class="logoArea">
-        <img src="./icons/icon48.png"> 
+        <img src="./icons/icon48.png">
         <div>
           <h1>RuruGrab</h1>
           <p class="headSub">Settings</p>
@@ -25,7 +27,8 @@
       <div class="cardHead">
         <div class="cardTitleBlock">
           <h2>Watched Record Badge</h2>
-          <p class="help">Adjust badge text and background, text, and border colors (including alpha). Changes will be reflected immediately in the open YouTube tab when saved.</p>
+          <p class="help">Adjust badge text and background, text, and border colors (including alpha). Changes will be
+            reflected immediately in the open YouTube tab when saved.</p>
         </div>
         <div class="previewDock">
           <span class="statLabel">Preview</span>
@@ -47,7 +50,8 @@
               <span class="labelSm">Background</span>
               <div class="colorCtl">
                 <input type="color" id="badgeBgColor" aria-label="Badge background color" />
-                <input type="range" id="badgeBgAlpha" min="0" max="100" step="1" aria-label="Badge Background Opacity" />
+                <input type="range" id="badgeBgAlpha" min="0" max="100" step="1"
+                  aria-label="Badge Background Opacity" />
                 <span class="monoTag" id="badgeBgRgba">—</span>
               </div>
             </div>
@@ -65,7 +69,8 @@
               <span class="labelSm">Border</span>
               <div class="colorCtl">
                 <input type="color" id="badgeBorderColor" aria-label="Badge border color" />
-                <input type="range" id="badgeBorderAlpha" min="0" max="100" step="1" aria-label="Badge border opacity" />
+                <input type="range" id="badgeBorderAlpha" min="0" max="100" step="1"
+                  aria-label="Badge border opacity" />
                 <span class="monoTag" id="badgeBorderRgba">—</span>
               </div>
             </div>
@@ -112,7 +117,8 @@
             <button id="importYouTubeHistoryBtn">YouTube Watch History</button>
             <button id="cancelYouTubeHistoryBtn" style="display:none;" class="danger">Cancel</button>
           </div>
-          <p class="helpNote">Automatically scrolls the YouTube Watch History page to collect all videos. The more history you have, the longer it takes.</p>
+          <p class="helpNote">Automatically scrolls the YouTube Watch History page to collect all videos. The more
+            history you have, the longer it takes.</p>
 
           <div class="btnRow">
             <button id="importTakeoutBtn">Google Takeout JSON</button>
@@ -156,7 +162,8 @@
       <div class="cardHead">
         <div class="cardTitleBlock">
           <h2>SQLite Sync</h2>
-          <p class="help">Sync between local IndexedDB and server-side SQLite. The server (server.py) must be running.</p>
+          <p class="help">Sync between local IndexedDB and server-side SQLite. The server (server.py) must be running.
+          </p>
         </div>
         <div class="statBadge" id="syncStatusBadge">
           <span class="statLabel" id="syncStatusLabel">Server</span>
@@ -202,25 +209,7 @@
         <button id="sqliteSyncNowBtn" class="primary">싱크하기</button>
       </div>
 
-      <!-- Advanced: Full Restore -->
-      <div class="advancedToggle">
-        <button id="advancedSyncToggle" class="linkBtn" type="button">Advanced ▸</button>
-      </div>
-      <div id="advancedSyncPanel" class="advancedPanel" style="display:none;">
-        <p class="helpNote">Full restore downloads the entire server DB. Use this if sync is out of order or you're setting up a new browser.</p>
-        <div class="actions">
-          <button id="sqliteRestoreBtn" class="danger">Full Restore from Server</button>
-          <label class="check muted" for="sqliteRestoreWipe">
-            <input type="checkbox" id="sqliteRestoreWipe" />
-            <span>Wipe local DB before restore</span>
-          </label>
-        </div>
 
-        <p class="helpNote" style="margin-top:12px;">Full upload pushes all local records to the server. Use when the server DB is missing data (e.g. first setup or large gap).</p>
-        <div class="actions">
-          <button id="sqliteFullUploadBtn">Full Upload to Server</button>
-        </div>
-      </div>
     </section>
 
     <!-- ── Stats ── -->
@@ -270,4 +259,5 @@
   <script src="db.js"></script>
   <script src="options.js"></script>
 </body>
+
 </html>

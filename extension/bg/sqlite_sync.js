@@ -97,27 +97,27 @@
     const CHUNK = 5000;
     let totalPushed = 0;
 
-    // Bootstrap: watched(synced=0) → changelog
-    const bootstrapDone = await chrome.storage.local.get({ syncBootstrapDone: false })
-      .catch(() => ({ syncBootstrapDone: false }));
-
-    if (!bootstrapDone.syncBootstrapDone) {
-      const hasChangelog = await YT_DLP_DB.exportUnpushedChanges({ limit: 1 });
-      if (!hasChangelog.length) {
-        broadcastSyncProgress('Bootstrap: migrating local records to changelog...');
-        while (true) {
-          const legacy = await YT_DLP_DB.exportUnsynced({ limit: CHUNK });
-          if (!legacy.length) break;
-
-          await YT_DLP_DB.appendChangeBatch(
-            legacy.map((r) => ({ id: r.id, action: 'watch', ts: r.ts }))
-          );
-          await YT_DLP_DB.markSyncedMany(legacy);
-
-          if (legacy.length < CHUNK) break;
+    // Bootstrap: ensure ALL local records are in changelog
+    // Runs when unpushed changelog is empty but local watched has data.
+    // Handles first setup, server reset, and legacy synced=1 records.
+    {
+      const unpushedCheck = await YT_DLP_DB.exportUnpushedChanges({ limit: 1 });
+      if (!unpushedCheck.length) {
+        const localCount = await YT_DLP_DB.count().catch(() => 0);
+        if (localCount > 0) {
+          broadcastSyncProgress(`Bootstrap: migrating ${localCount.toLocaleString()} local records to changelog...`);
+          let offset = 0;
+          while (true) {
+            const batch = await YT_DLP_DB.exportAll({ limit: CHUNK, offset });
+            if (!batch.length) break;
+            await YT_DLP_DB.appendChangeBatch(
+              batch.map((r) => ({ id: r.id, action: 'watch', ts: r.ts }))
+            );
+            offset += batch.length;
+            if (batch.length < CHUNK) break;
+          }
         }
       }
-      await chrome.storage.local.set({ syncBootstrapDone: true }).catch(() => { });
     }
 
     // Push loop: changelog → server
@@ -330,72 +330,6 @@
   }
 
   BG.restoreFromSqlite = restoreFromSqlite;
-
-  // ────────────────────────────────────────────────────────
-  //  Full Upload: push ALL local records to server
-  //  Use when server DB is far behind local (e.g. first setup)
-  // ────────────────────────────────────────────────────────
-  async function fullSyncToServer() {
-    const serverBase = await BG.getSqliteServerBaseUrl();
-    const endpoint = `${serverBase}/sync_changes`;
-    const instance = await getInstanceId();
-
-    broadcastSyncProgress('Full Upload: reading local DB...');
-
-    // Read entire local DB
-    const all = await YT_DLP_DB.exportAll();
-    const total = all.length;
-
-    if (total === 0) {
-      broadcastSyncProgress('');
-      return { ok: true, pushed: 0, serverCount: null };
-    }
-
-    const CHUNK = 5000;
-    let pushed = 0;
-    let lastResp = null;
-
-    for (let i = 0; i < all.length; i += CHUNK) {
-      const slice = all.slice(i, i + CHUNK);
-      const changes = slice.map((r) => ({
-        id: r.id,
-        action: 'watch',
-        ts: Number(r.ts) || Date.now(),
-      }));
-
-      const pct = Math.min(100, Math.round(((i + slice.length) / total) * 100));
-      broadcastSyncProgress(`Full Upload: ↑ ${(i + slice.length).toLocaleString()} / ${total.toLocaleString()} (${pct}%)...`);
-
-      const r = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ instance, changes, since_seq: 0 }),
-      });
-
-      if (!r.ok) {
-        const text = await r.text().catch(() => '');
-        throw new Error(`Full Upload failed: ${r.status} ${text}`.trim());
-      }
-
-      lastResp = await r.json();
-      if (!lastResp?.ok) throw new Error(lastResp?.error || 'sync_changes returned not ok');
-
-      pushed += slice.length;
-    }
-
-    // Update cursor & status using last response
-    if (lastResp) {
-      const newCursor = Number(lastResp.cursor) || 0;
-      await chrome.storage.local.set({ syncCursor: newCursor }).catch(() => { });
-      const serverCount = lastResp.server_count ?? null;
-      await setSqliteStatus({ successMs: Date.now(), rowCount: serverCount, error: '' });
-    }
-
-    broadcastSyncProgress('');
-    return { ok: true, pushed, serverCount: lastResp?.server_count ?? null };
-  }
-
-  BG.fullSyncToServer = fullSyncToServer;
 
   //  Alarm-based periodic sync
   BG.reapplySqliteAlarms = async function reapplySqliteAlarms() {

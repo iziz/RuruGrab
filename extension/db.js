@@ -82,11 +82,10 @@ const YT_DLP_DB = (() => {
   async function putMany(records, { chunkSize = 1000 } = {}) {
     const recs = (records || [])
       .map(r => {
-        if (typeof r === 'string') return { id: r, ts: Date.now(), synced: 0 };
+        if (typeof r === 'string') return { id: r, ts: Date.now() };
         if (r && typeof r === 'object' && typeof r.id === 'string') {
           const ts = Number(r.ts) || Date.now();
-          const synced = Number.isFinite(Number(r.synced)) ? (Number(r.synced) ? 1 : 0) : 0;
-          return { ...r, id: r.id, ts, synced };
+          return { id: r.id, ts };
         }
         return null;
       })
@@ -160,18 +159,24 @@ const YT_DLP_DB = (() => {
     return c;
   }
 
-  async function exportAll({ limit = Infinity } = {}) {
+  async function exportAll({ limit = Infinity, offset = 0 } = {}) {
     const db = await open();
     const tx = db.transaction(STORE_WATCHED, 'readonly');
     const store = tx.objectStore(STORE_WATCHED);
 
     const out = [];
+    let skipped = 0;
     await new Promise((resolve, reject) => {
       const req = store.openCursor();
       req.onerror = () => reject(req.error || new Error('Cursor failed'));
       req.onsuccess = () => {
         const cursor = req.result;
         if (!cursor) return resolve();
+        if (skipped < offset) {
+          skipped++;
+          cursor.continue();
+          return;
+        }
         out.push(cursor.value);
         if (out.length >= limit) return resolve();
         cursor.continue();
@@ -182,91 +187,6 @@ const YT_DLP_DB = (() => {
     return out;
   }
 
-  async function exportUnsynced({ limit = 5000 } = {}) {
-    const limitN = Math.max(1, Number(limit) || 5000);
-
-    const db = await open();
-    const tx = db.transaction(STORE_WATCHED, 'readonly');
-    const store = tx.objectStore(STORE_WATCHED);
-
-    const out = [];
-    await new Promise((resolve, reject) => {
-      const req = store.openCursor();
-      req.onerror = () => reject(req.error || new Error('Cursor failed'));
-      req.onsuccess = () => {
-        const cursor = req.result;
-        if (!cursor) return resolve();
-
-        const v = cursor.value || {};
-        const synced = Number.isFinite(Number(v.synced)) ? (Number(v.synced) ? 1 : 0) : 0;
-
-        if (synced === 0) {
-          out.push({ id: v.id, ts: Number(v.ts) || 0 });
-          if (out.length >= limitN) return resolve();
-        }
-
-        cursor.continue();
-      };
-    });
-
-    await _txDone(tx);
-    out.sort((a, b) => (a.ts - b.ts) || String(a.id).localeCompare(String(b.id)));
-    return out;
-  }
-
-  async function markSyncedMany(records, { chunkSize = 1200 } = {}) {
-    const recs = (records || [])
-      .map(r => (r && typeof r === 'object' && typeof r.id === 'string')
-        ? { id: r.id, ts: Number(r.ts) || Date.now(), synced: 1 }
-        : null)
-      .filter(Boolean);
-
-    if (!recs.length) return { updated: 0 };
-
-    const db = await open();
-    let updated = 0;
-
-    for (let i = 0; i < recs.length; i += chunkSize) {
-      const chunk = recs.slice(i, i + chunkSize);
-      const tx = db.transaction(STORE_WATCHED, 'readwrite');
-      const store = tx.objectStore(STORE_WATCHED);
-      for (const r of chunk) store.put(r);
-      await _txDone(tx);
-      updated += chunk.length;
-    }
-
-    return { updated };
-  }
-
-  async function setAllSynced(syncedValue = 0) {
-    const desired = Number(syncedValue) ? 1 : 0;
-    const db = await open();
-    const tx = db.transaction(STORE_WATCHED, 'readwrite');
-    const store = tx.objectStore(STORE_WATCHED);
-
-    let updated = 0;
-
-    await new Promise((resolve, reject) => {
-      const req = store.openCursor();
-      req.onerror = () => reject(req.error || new Error('Cursor failed'));
-      req.onsuccess = () => {
-        const cursor = req.result;
-        if (!cursor) return resolve();
-
-        const v = cursor.value || {};
-        const cur = Number(v.synced) ? 1 : 0;
-        if (cur !== desired) {
-          v.synced = desired;
-          cursor.update(v);
-          updated += 1;
-        }
-        cursor.continue();
-      };
-    });
-
-    await _txDone(tx);
-    return { updated };
-  }
 
   // ════════════════════════════════════════════════════════
   //  changelog store (NEW — for bidirectional sync)
@@ -418,8 +338,8 @@ const YT_DLP_DB = (() => {
         if (c.action === 'unwatch') {
           store.delete(c.id);
         } else {
-          // 'watch': put with synced=1 (already on server)
-          store.put({ id: c.id, ts: c.ts, synced: 1 });
+          // 'watch': put without synced flag
+          store.put({ id: c.id, ts: c.ts });
         }
         applied++;
       }
@@ -486,17 +406,14 @@ const YT_DLP_DB = (() => {
     clearAll,
     count,
     exportAll,
-    exportUnsynced,
-    markSyncedMany,
-    setAllSynced,
-    // changelog store (NEW)
+    // changelog store
     appendChange,
     appendChangeBatch,
     exportUnpushedChanges,
     markChangesPushed,
     pruneChangelog,
     applyRemoteChanges,
-    // stats (#11)
+    // stats
     getWatchStats,
   };
 })();
