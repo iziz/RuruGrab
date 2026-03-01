@@ -440,21 +440,14 @@ export function updateDownloadList(itemsRaw) {
 
   const EMPTY_ID = 'dlEmpty'
   if (!ids.length) {
-    dom.dlList.innerHTML =
-      `<div id="${EMPTY_ID}" class="text-muted" style="padding:40px;text-align:center;font-size:14px;">Download list is empty</div>`
+    const emptyHtml = '<div id="dlEmpty" class="text-muted" style="padding:20px;text-align:center;">No downloads</div>'
+    if (dom.dlList.innerHTML !== emptyHtml) dom.dlList.innerHTML = emptyHtml
     dlNodeById.clear()
     return
   }
 
   const emptyEl = dom.dlList.querySelector(`#${EMPTY_ID}`)
-  if (emptyEl) {
-    emptyEl.remove()
-  } else {
-    const legacy = Array.from(dom.dlList.children).find((el) =>
-      (el?.textContent || '').includes('Download list is empty')
-    )
-    if (legacy) legacy.remove()
-  }
+  if (emptyEl) emptyEl.remove()
 
   const live = new Set(ids)
   for (const [id, node] of dlNodeById.entries()) {
