@@ -12,10 +12,8 @@ export async function refreshSqlite() {
   const filter = String(dom.sqliteFilter?.value ?? '').trim()
 
   try {
-    const countJson = await apiFetch('/watched_count')
-    const total = countJson?.count || 0
-
     const exportJson = await apiFetch(`/watched_export?page=0&page_size=100`)
+    const total = exportJson?.total ?? 0
     let rows = exportJson?.records || []
 
     if (filter) {
