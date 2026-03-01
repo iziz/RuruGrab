@@ -109,7 +109,7 @@ function _parseCssColorToRgba(input) {
 function _formatColorForDisplay({ r, g, b, a }) {
   const hex = _rgbToHex(r, g, b).toUpperCase(); // #FFFF00 format
   const alphaPct = Math.round(a * 100);        // 100% format
-  
+
   // Use a readable combo (e.g., #FFFF00 · 100%)
   return `${hex} · ${alphaPct}%`;
 }
@@ -152,12 +152,12 @@ function _setControlsFromCssColor(cssColor, { colorId, alphaId, labelId }) {
 function _updateColorLabel({ colorId, alphaId, labelId }) {
   const labelEl = $(labelId);
   if (!labelEl) return;
-  
+
   const colorEl = $(colorId);
   const alphaEl = $(alphaId);
   const rgb = _hexToRgb(colorEl.value);
   const a = (alphaEl.value / 100);
-  
+
   labelEl.textContent = _formatColorForDisplay({ ...rgb, a });
 }
 
@@ -225,7 +225,7 @@ function _scheduleSqliteGateNext(delayMs) {
   if (!_sqliteGateStarted) return;
   if (_sqliteGateTimer) clearTimeout(_sqliteGateTimer);
   _sqliteGateTimer = setTimeout(() => {
-    _sqliteGateLoop().catch(() => {});
+    _sqliteGateLoop().catch(() => { });
   }, Math.max(0, delayMs));
 }
 
@@ -245,7 +245,7 @@ function _normalizeServerUrl(raw) {
 
 async function _pingSqliteServer(serverUrl) {
   const base = _normalizeServerUrl(serverUrl);
-    if (!base) return { ok: false, reason: 'Server URL is empty.' };
+  if (!base) return { ok: false, reason: 'Server URL is empty.' };
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), SQLITE_GATE_CFG.timeoutMs);
@@ -296,19 +296,25 @@ function _applySqliteGateUI({ ok, reason }) {
 
   const syncBtn = $('sqliteSyncNowBtn');
   const restoreBtn = $('sqliteRestoreBtn');
+  const fullUploadBtn = $('sqliteFullUploadBtn');
 
   if (syncBtn) {
     if (_sqliteSyncNowBtnLabel == null) _sqliteSyncNowBtnLabel = syncBtn.textContent;
     syncBtn.disabled = !_sqliteServerOk;
-        syncBtn.title = _sqliteServerOk ? '' : `Only available when the server (server.py) is running. (${reason || 'unreachable'})`;
+    syncBtn.title = _sqliteServerOk ? '' : `Only available when the server (server.py) is running. (${reason || 'unreachable'})`;
     syncBtn.textContent = _sqliteSyncNowBtnLabel;
   }
 
   if (restoreBtn) {
     if (_sqliteRestoreBtnLabel == null) _sqliteRestoreBtnLabel = restoreBtn.textContent;
     restoreBtn.disabled = !_sqliteServerOk;
-        restoreBtn.title = _sqliteServerOk ? '' : `Only available when the server (server.py) is running. (${reason || 'unreachable'})`;
+    restoreBtn.title = _sqliteServerOk ? '' : `Only available when the server (server.py) is running. (${reason || 'unreachable'})`;
     restoreBtn.textContent = _sqliteRestoreBtnLabel;
+  }
+
+  if (fullUploadBtn) {
+    fullUploadBtn.disabled = !_sqliteServerOk;
+    fullUploadBtn.title = _sqliteServerOk ? '' : `Only available when the server (server.py) is running. (${reason || 'unreachable'})`;
   }
 
   // Update status badge
@@ -405,7 +411,8 @@ function log(msg) {
 function notifyYouTubeTabsRefresh() {
   chrome.tabs.query({ url: ['*://*.youtube.com/*', '*://youtube.com/*'] }, (tabs) => {
     for (const t of (tabs || [])) {
-      if (t.id) sendTabMessage(t.id, { type: 'REFRESH_WATCHED' });}
+      if (t.id) sendTabMessage(t.id, { type: 'REFRESH_WATCHED' });
+    }
   });
 }
 
@@ -477,7 +484,7 @@ async function saveSqliteUI() {
   });
 
   // Notify the background (service worker) to reconfigure alarms.
-  await sendRuntimeMessage({ type: 'SQLITE_APPLY_SETTINGS' }).catch(() => {});
+  await sendRuntimeMessage({ type: 'SQLITE_APPLY_SETTINGS' }).catch(() => { });
 }
 
 
@@ -493,7 +500,7 @@ async function loadUI() {
   _setControlsFromCssColor(s.badgeBorderColor ?? DEFAULT_SETTINGS.badgeBorderColor, { colorId: 'badgeBorderColor', alphaId: 'badgeBorderAlpha', labelId: 'badgeBorderRgba' });
   _updateBadgePreview();
 
-const ui = await chrome.storage.local.get(DEFAULT_UI);
+  const ui = await chrome.storage.local.get(DEFAULT_UI);
   $('historyIncludeShorts').checked = (ui.historyIncludeShorts ?? true) === true;
 
   await loadSqliteUI();
@@ -548,7 +555,7 @@ $('sqliteSyncIntervalMin')?.addEventListener('change', async () => { await saveS
 $('sqliteSyncNowBtn')?.addEventListener('click', async () => {
   const gate = await refreshSqliteServerAvailability({ force: true }).catch(() => ({ ok: false, reason: 'unreachable' }));
   if (!gate?.ok) {
-        log(`Failed: you can sync only when the server (server.py) is running. (${gate?.reason || 'unreachable'})`);
+    log(`Failed: you can sync only when the server (server.py) is running. (${gate?.reason || 'unreachable'})`);
     await refreshSqliteStatus();
     return;
   }
@@ -559,7 +566,7 @@ $('sqliteSyncNowBtn')?.addEventListener('click', async () => {
     syncBtn.textContent = '싱크 중...';
   }
 
-    log('Starting sync...');
+  log('Starting sync...');
   const resp = await sendRuntimeMessage({ type: 'SQLITE_SYNC_NOW' }).catch((e) => ({ ok: false, error: String(e) }));
 
   if (syncBtn) {
@@ -571,7 +578,7 @@ $('sqliteSyncNowBtn')?.addEventListener('click', async () => {
   if (progressEl) progressEl.textContent = '';
 
   if (!resp?.ok) {
-        log(`Failed: ${resp?.error || 'unknown error'}`);
+    log(`Failed: ${resp?.error || 'unknown error'}`);
     await refreshSqliteStatus();
     return;
   }
@@ -604,36 +611,62 @@ $('sqliteRestoreBtn')?.addEventListener('click', async () => {
     : 'Full restore: merge server data with existing local DB.\nContinue?');
   if (!ok) return;
 
-    log('Starting full restore from server...');
+  log('Starting full restore from server...');
   const resp = await sendRuntimeMessage({ type: 'SQLITE_RESTORE', wipe }).catch((e) => ({ ok: false, error: String(e) }));
   // Clear progress
   const progressEl = $('syncProgress');
   if (progressEl) progressEl.textContent = '';
 
-  if (!resp?.ok)     log(`Failed: ${resp?.error || 'unknown error'}`);
-    else log(`Done: restored ${resp.restored?.toLocaleString?.() ?? resp.restored} items (server total: ${resp.rowCount?.toLocaleString?.() ?? resp.rowCount})`);
+  if (!resp?.ok) log(`Failed: ${resp?.error || 'unknown error'}`);
+  else log(`Done: restored ${resp.restored?.toLocaleString?.() ?? resp.restored} items (server total: ${resp.rowCount?.toLocaleString?.() ?? resp.rowCount})`);
   await refreshCount();
   await refreshSqliteStatus();
   await refreshStats();
   notifyYouTubeTabsRefresh();
 });
 
+$('sqliteFullUploadBtn')?.addEventListener('click', async () => {
+  const localCount = await YT_DLP_DB.count().catch(() => 0);
+  const ok = confirm(`Full upload: push all ${localCount.toLocaleString()} local records to the server.\nThis may take a while. Continue?`);
+  if (!ok) return;
+
+  const btn = $('sqliteFullUploadBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Uploading...'; }
+
+  log(`Starting full upload (${localCount.toLocaleString()} local records)...`);
+  const resp = await sendRuntimeMessage({ type: 'SQLITE_FULL_UPLOAD' }).catch((e) => ({ ok: false, error: String(e) }));
+
+  if (btn) { btn.disabled = !_sqliteServerOk; btn.textContent = 'Full Upload to Server'; }
+
+  const progressEl = $('syncProgress');
+  if (progressEl) progressEl.textContent = '';
+
+  if (!resp?.ok) {
+    log(`Failed: ${resp?.error || 'unknown error'}`);
+  } else {
+    const fmt = (v) => Number.isFinite(Number(v)) ? Number(v).toLocaleString('en-US') : '?';
+    log(`Done: ↑ uploaded ${fmt(resp.pushed)} records · server total: ${fmt(resp.serverCount)}`);
+  }
+
+  await refreshSqliteStatus();
+});
+
 $('importHistoryAllBtn').addEventListener('click', async () => {
   const includeShorts = $('historyIncludeShorts').checked;
   const { historyMaxResults } = await chrome.storage.local.get(DEFAULT_UI);
 
-    log(`Scanning entire browser history... (maxResults=${historyMaxResults || 100000})`);
+  log(`Scanning entire browser history... (maxResults=${historyMaxResults || 100000})`);
   const resp = await sendRuntimeMessage({
     type: 'IMPORT_FROM_BROWSER_HISTORY_ALL',
     params: { maxResults: historyMaxResults || 100000, includeShorts }
   }).catch((e) => ({ ok: false, error: String(e) }));
 
   if (!resp?.ok) {
-        log(`Failed: ${resp?.error || 'unknown error'}`);
+    log(`Failed: ${resp?.error || 'unknown error'}`);
     return;
   }
 
-    log(`Done: scanned ${resp.scannedUrls?.toLocaleString?.() ?? resp.scannedUrls} URLs → found ${resp.found?.toLocaleString?.() ?? resp.found} videoIds → added ${resp.inserted?.toLocaleString?.() ?? resp.inserted} (including skips)`);
+  log(`Done: scanned ${resp.scannedUrls?.toLocaleString?.() ?? resp.scannedUrls} URLs → found ${resp.found?.toLocaleString?.() ?? resp.found} videoIds → added ${resp.inserted?.toLocaleString?.() ?? resp.inserted} (including skips)`);
   await refreshCount();
   await refreshStats();
   notifyYouTubeTabsRefresh();
@@ -644,14 +677,14 @@ $('importYouTubeHistoryBtn')?.addEventListener('click', async () => {
   const btn = $('importYouTubeHistoryBtn');
   const cancelBtn = $('cancelYouTubeHistoryBtn');
   if (!btn) return;
-  
+
   btn.disabled = true;
   const originalText = btn.textContent;
-    btn.textContent = 'Working...';
+  btn.textContent = 'Working...';
   if (cancelBtn) cancelBtn.style.display = '';
 
-    log('Opening the YouTube Watch History page...');
-  
+  log('Opening the YouTube Watch History page...');
+
   const resp = await sendRuntimeMessage({
     type: 'IMPORT_FROM_YOUTUBE_HISTORY_PAGE'
   }).catch((e) => ({ ok: false, error: String(e) }));
@@ -661,23 +694,23 @@ $('importYouTubeHistoryBtn')?.addEventListener('click', async () => {
   if (cancelBtn) cancelBtn.style.display = 'none';
 
   if (!resp?.ok) {
-        log(`Failed: ${resp?.error || 'unknown error'}`);
+    log(`Failed: ${resp?.error || 'unknown error'}`);
     return;
   }
 
   if (resp.cancelled) {
-        log('Cancelled by user.');
+    log('Cancelled by user.');
     return;
   }
 
-    log(`Done: collected ${resp.collected?.toLocaleString?.() ?? resp.collected} → inserted ${resp.inserted?.toLocaleString?.() ?? resp.inserted} (scrolled ${resp.scrollCount || 0} times)`);
+  log(`Done: collected ${resp.collected?.toLocaleString?.() ?? resp.collected} → inserted ${resp.inserted?.toLocaleString?.() ?? resp.inserted} (scrolled ${resp.scrollCount || 0} times)`);
   await refreshCount();
   await refreshStats();
   notifyYouTubeTabsRefresh();
 });
 
 $('cancelYouTubeHistoryBtn')?.addEventListener('click', () => {
-  sendRuntimeMessage({ type: 'CANCEL_YOUTUBE_HISTORY_SCROLL' }).catch(() => {});
+  sendRuntimeMessage({ type: 'CANCEL_YOUTUBE_HISTORY_SCROLL' }).catch(() => { });
   log('Cancel requested...');
 });
 
@@ -746,7 +779,7 @@ $('importJsonFile')?.addEventListener('change', async (e) => {
   notifyYouTubeTabsRefresh();
 });
 $('exportBtn').addEventListener('click', async () => {
-    log('Export: reading...');
+  log('Export: reading...');
   const all = await YT_DLP_DB.exportAll();
   const payload = {
     exportedAt: new Date().toISOString(),
@@ -762,14 +795,14 @@ $('exportBtn').addEventListener('click', async () => {
   a.click();
 
   setTimeout(() => URL.revokeObjectURL(url), 1500);
-    log(`Export: downloaded ${all.length.toLocaleString()} items`);
+  log(`Export: downloaded ${all.length.toLocaleString()} items`);
 });
 
 $('clearBtn').addEventListener('click', async () => {
-    const ok = confirm('Delete all watch history?');
+  const ok = confirm('Delete all watch history?');
   if (!ok) return;
   await YT_DLP_DB.clearAll();
-    log('Deleted all.');
+  log('Deleted all.');
   await refreshCount();
   notifyYouTubeTabsRefresh();
 });
