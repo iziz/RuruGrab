@@ -159,6 +159,19 @@ const YT_DLP_DB = (() => {
     return c;
   }
 
+  /**
+   * Count ALL changelog entries (pushed + unpushed).
+   * Used by bootstrap guard: runs only when changelog is completely empty.
+   */
+  async function countChangelog() {
+    const db = await open();
+    const tx = db.transaction(STORE_CHANGELOG, 'readonly');
+    const store = tx.objectStore(STORE_CHANGELOG);
+    const c = await _reqToPromise(store.count());
+    await _txDone(tx);
+    return c;
+  }
+
   async function exportAll({ limit = Infinity, offset = 0 } = {}) {
     const db = await open();
     const tx = db.transaction(STORE_WATCHED, 'readonly');
@@ -409,6 +422,7 @@ const YT_DLP_DB = (() => {
     // changelog store
     appendChange,
     appendChangeBatch,
+    countChangelog,
     exportUnpushedChanges,
     markChangesPushed,
     pruneChangelog,

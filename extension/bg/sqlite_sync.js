@@ -97,12 +97,13 @@
     const CHUNK = 5000;
     let totalPushed = 0;
 
-    // Bootstrap: ensure ALL local records are in changelog
-    // Runs when unpushed changelog is empty but local watched has data.
-    // Handles first setup, server reset, and legacy synced=1 records.
+    // Bootstrap: ensure ALL local records are in changelog.
+    // Runs ONLY when changelog is completely empty (first setup or after full wipe).
+    // Guard: countChangelog() checks both pushed=0 and pushed=1 entries,
+    // so already-synced installs do NOT re-trigger bootstrap on every sync.
     {
-      const unpushedCheck = await YT_DLP_DB.exportUnpushedChanges({ limit: 1 });
-      if (!unpushedCheck.length) {
+      const changelogTotal = await YT_DLP_DB.countChangelog().catch(() => -1);
+      if (changelogTotal === 0) {
         const localCount = await YT_DLP_DB.count().catch(() => 0);
         if (localCount > 0) {
           broadcastSyncProgress(`Bootstrap: migrating ${localCount.toLocaleString()} local records to changelog...`);
@@ -138,6 +139,10 @@
         const r = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          // sinceSeq is intentionally kept at the ORIGINAL saved cursor throughout
+          // all push chunks. This ensures the final finalizePull receives ALL
+          // remote_changes from other instances since our last sync — not just
+          // changes after the last chunk's cursor.
           body: JSON.stringify({ instance, changes, since_seq: sinceSeq }),
         });
 
@@ -155,7 +160,7 @@
       const keys = unpushed.map((c) => c.key);
       await YT_DLP_DB.markChangesPushed(keys);
       totalPushed += changes.length;
-      sinceSeq = Number(resp.cursor) || sinceSeq;
+      // NOTE: sinceSeq is NOT updated here — see comment above.
 
       if (unpushed.length < CHUNK) {
         return await finalizePull(resp, sinceSeq, totalPushed);
