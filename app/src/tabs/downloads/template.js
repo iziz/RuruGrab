@@ -16,7 +16,7 @@ export const template = `
   </div>
 
   <div class="dl-list flex-1" id="dlList">
-    <div class="text-muted" style="padding:20px;text-align:center;">No downloads</div>
+    <div id="dlEmpty" class="text-muted" style="padding:20px;text-align:center;">No downloads</div>
   </div>
 </section>
 `
