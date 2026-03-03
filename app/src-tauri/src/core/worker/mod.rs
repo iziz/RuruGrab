@@ -325,7 +325,7 @@ pub async fn start_worker(state: Arc<AppState>, mut rx: mpsc::Receiver<DownloadT
         CommandEvent::Terminated(payload) => {
           let code = payload.code.unwrap_or(-1);
           if cancel_token.is_cancelled() {
-            let delete_files_flag = {
+            let (delete_files_flag, cancelled_item) = {
               let mut inner = state.inner.lock();
               inner.current_id = None;
               inner.progress.status = Some("cancelled".into());
@@ -337,8 +337,16 @@ pub async fn start_worker(state: Arc<AppState>, mut rx: mpsc::Receiver<DownloadT
                 it.finished_at = Some(AppState::now_ts());
               }
 
-              inner.cancel_delete_files.remove(&task.id).unwrap_or(false)
+              let dflag = inner.cancel_delete_files.remove(&task.id).unwrap_or(false);
+              let snap = inner.find_download(task.id).cloned();
+              (dflag, snap)
             };
+
+            if let Some(item) = cancelled_item {
+              if let Err(e) = state.db.upsert_download(&item) {
+                state.log_line(format!("[db] upsert cancel failed: {e}"));
+              }
+            }
 
             if delete_files_flag {
               if let Some(vid) = handler.extract_media_id(&task.url) {
@@ -430,6 +438,11 @@ pub async fn queue_task(
   req: DownloadRequest,
   fixed_id: Option<i64>,
 ) -> anyhow::Result<i64> {
+  // ── URL dedup: skip if URL already exists in DB (new downloads only) ──
+  if fixed_id.is_none() && state.db.url_exists_in_queue(&req.url).unwrap_or(false) {
+    anyhow::bail!("already in queue");
+  }
+
   let handler = SourceHandler::from_url(&req.url);
 
   let id = {
@@ -481,6 +494,14 @@ pub async fn queue_task(
     id
   };
 
+  // ── Persist to DB ────────────────────────────────────────────────────
+  let item_snap = { state.inner.lock().find_download(id).cloned() };
+  if let Some(item) = item_snap {
+    if let Err(e) = state.db.upsert_download(&item) {
+      state.log_line(format!("[db] upsert_download(queue) failed: {e}"));
+    }
+  }
+
   let task = DownloadTask {
     id,
     url: req.url,
@@ -514,6 +535,7 @@ pub async fn queue_task(
 
 pub fn cancel_task(state: &Arc<AppState>, id: i64, delete_files: bool) -> bool {
   let mut ok = false;
+  let mut cancelled_non_running = false;
   {
     let mut inner = state.inner.lock();
     if let Some(tok) = inner.cancel.get(&id).cloned() {
@@ -525,8 +547,17 @@ pub fn cancel_task(state: &Arc<AppState>, id: i64, delete_files: bool) -> bool {
           it.error = Some("cancelled".into());
           it.finished_at = Some(AppState::now_ts());
         }
+        cancelled_non_running = true;
       }
       ok = true;
+    }
+  }
+  if cancelled_non_running {
+    let item_snap = { state.inner.lock().find_download(id).cloned() };
+    if let Some(item) = item_snap {
+      if let Err(e) = state.db.upsert_download(&item) {
+        state.log_line(format!("[db] upsert cancel(non-running) failed: {e}"));
+      }
     }
   }
   if ok {
@@ -619,6 +650,10 @@ pub async fn delete_task(
       .await
       .unwrap_or_default();
     }
+  }
+
+  if let Err(e) = state.db.delete_download(id) {
+    state.log_line(format!("[db] delete_download failed: {e}"));
   }
 
   state.emit_status_throttled(Duration::from_millis(0));

@@ -58,6 +58,20 @@ impl AppState {
     std::fs::create_dir_all(&cfg.download_dir).ok();
     let db = Arc::new(Db::init(&cfg.sqlite_path)?);
 
+    // ── Restore persisted download queue ──────────────────────────────────
+    let mut downloads = db.load_all_downloads().unwrap_or_default();
+    // Items that were mid-download when the app closed → mark failed so the
+    // user can see them and retry manually.
+    for it in &mut downloads {
+      if matches!(it.status.as_deref(), Some("downloading") | Some("starting")) {
+        it.status = Some("failed".into());
+        it.error = Some("interrupted (app restarted)".into());
+        let _ = db.upsert_download(it);
+      }
+    }
+    let next_id = downloads.iter().filter_map(|d| d.id).max().unwrap_or(0) + 1;
+    // ──────────────────────────────────────────────────────────────────────
+
     let (tx, rx) = mpsc::channel::<DownloadTask>(256);
 
     Ok((
@@ -65,7 +79,7 @@ impl AppState {
         cfg,
         db,
         log: LogBuffer::new(4000),
-        inner: Mutex::new(InnerState { next_id: 1, ..Default::default() }),
+        inner: Mutex::new(InnerState { next_id, downloads, ..Default::default() }),
         queue_tx: tx,
         queue_size: AtomicI64::new(0),
         worker_alive: AtomicBool::new(false),

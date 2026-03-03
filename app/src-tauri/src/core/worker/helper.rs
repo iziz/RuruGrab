@@ -21,6 +21,13 @@ pub fn mark_failed(state: &Arc<AppState>, id: i64, error: &str) {
     }
   }
   state.log_line(format!("[worker] failed id={id}: {error}"));
+
+  let item_snap = { state.inner.lock().find_download(id).cloned() };
+  if let Some(item) = item_snap {
+    if let Err(e) = state.db.upsert_download(&item) {
+      state.log_line(format!("[db] upsert mark_failed failed: {e}"));
+    }
+  }
 }
 
 pub async fn mark_done(
@@ -158,6 +165,13 @@ pub async fn mark_done(
     }
   }
   state.log_line(format!("[worker] done id={id}"));
+
+  let item_snap = { state.inner.lock().find_download(id).cloned() };
+  if let Some(item) = item_snap {
+    if let Err(e) = state.db.upsert_download(&item) {
+      state.log_line(format!("[db] upsert mark_done failed: {e}"));
+    }
+  }
 }
 
 pub fn is_image_path(p: &Path) -> bool {

@@ -4,6 +4,8 @@ use anyhow::Context;
 use parking_lot::Mutex;
 use rusqlite::{params, Connection};
 
+use crate::api::models::DownloadItem;
+
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct WatchedRecord {
   pub id: String,
@@ -68,6 +70,36 @@ impl Db {
          value INTEGER NOT NULL DEFAULT 0\
        );\
        INSERT OR IGNORE INTO sync_meta(key, value) VALUES('seq', 0);"
+    )?;
+
+    // ── schema v3: persistent download queue ──────────────────
+    conn.execute_batch(
+      "CREATE TABLE IF NOT EXISTS download_queue(\
+         id               INTEGER PRIMARY KEY,\
+         url              TEXT NOT NULL,\
+         status           TEXT NOT NULL DEFAULT 'queued',\
+         source           TEXT,\
+         title            TEXT,\
+         thumbnail        TEXT,\
+         duration         TEXT,\
+         uploader         TEXT,\
+         resolution       TEXT,\
+         fps              REAL,\
+         tbr              REAL,\
+         filename         TEXT,\
+         percent          REAL DEFAULT 0,\
+         downloaded_bytes REAL,\
+         total_bytes      REAL,\
+         downloaded_items INTEGER,\
+         total_items      INTEGER,\
+         error            TEXT,\
+         video_id         TEXT,\
+         created_at       INTEGER,\
+         started_at       INTEGER,\
+         finished_at      INTEGER\
+       );\
+       CREATE INDEX IF NOT EXISTS idx_dlq_created ON download_queue(created_at DESC);\
+       CREATE INDEX IF NOT EXISTS idx_dlq_url     ON download_queue(url);"
     )?;
 
     Ok(Self { conn: Mutex::new(conn), path: path.to_path_buf() })
@@ -232,6 +264,114 @@ impl Db {
   #[allow(dead_code)]
   pub fn path(&self) -> &Path {
     &self.path
+  }
+
+  // ────────────────────────────────────────────────────────
+  //  Download queue persistence
+  // ────────────────────────────────────────────────────────
+
+  /// Insert or replace a download item.
+  pub fn upsert_download(&self, item: &DownloadItem) -> anyhow::Result<()> {
+    let id = match item.id {
+      Some(id) => id,
+      None => return Ok(()),
+    };
+    let conn = self.conn.lock();
+    conn.execute(
+      "INSERT OR REPLACE INTO download_queue(\
+         id, url, status, source, title, thumbnail, duration, uploader, resolution,\
+         fps, tbr, filename, percent, downloaded_bytes, total_bytes,\
+         downloaded_items, total_items, error, video_id, created_at, started_at, finished_at\
+       ) VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20,?21,?22)",
+      params![
+        id,
+        item.url.as_deref().unwrap_or(""),
+        item.status.as_deref().unwrap_or("queued"),
+        item.source.as_deref(),
+        item.title.as_deref(),
+        item.thumbnail.as_deref(),
+        item.duration.as_deref(),
+        item.uploader.as_deref(),
+        item.resolution.as_deref(),
+        item.fps,
+        item.tbr,
+        item.filename.as_deref(),
+        item.percent.unwrap_or(0.0),
+        item.downloaded_bytes,
+        item.total_bytes,
+        item.downloaded_items,
+        item.total_items,
+        item.error.as_deref(),
+        item.video_id.as_deref(),
+        item.created_at,
+        item.started_at,
+        item.finished_at,
+      ],
+    )?;
+    Ok(())
+  }
+
+  /// Remove a download item by id.
+  pub fn delete_download(&self, id: i64) -> anyhow::Result<()> {
+    let conn = self.conn.lock();
+    conn.execute("DELETE FROM download_queue WHERE id = ?1", params![id])?;
+    Ok(())
+  }
+
+  /// Load all persisted download items ordered by created_at DESC.
+  pub fn load_all_downloads(&self) -> anyhow::Result<Vec<DownloadItem>> {
+    let conn = self.conn.lock();
+    let mut stmt = conn.prepare(
+      "SELECT id, url, status, source, title, thumbnail, duration, uploader, resolution,\
+              fps, tbr, filename, percent, downloaded_bytes, total_bytes,\
+              downloaded_items, total_items, error, video_id, created_at, started_at, finished_at\
+       FROM download_queue\
+       ORDER BY created_at DESC\
+       LIMIT 300",
+    )?;
+    let mut rows = stmt.query([])?;
+    let mut items = Vec::new();
+    while let Some(r) = rows.next()? {
+      items.push(DownloadItem {
+        id:               r.get(0)?,
+        url:              r.get(1)?,
+        status:           r.get(2)?,
+        source:           r.get(3)?,
+        title:            r.get(4)?,
+        thumbnail:        r.get(5)?,
+        duration:         r.get(6)?,
+        uploader:         r.get(7)?,
+        resolution:       r.get(8)?,
+        fps:              r.get(9)?,
+        tbr:              r.get(10)?,
+        filename:         r.get(11)?,
+        percent:          r.get(12)?,
+        downloaded_bytes: r.get(13)?,
+        total_bytes:      r.get(14)?,
+        downloaded_items: r.get(15)?,
+        total_items:      r.get(16)?,
+        error:            r.get(17)?,
+        video_id:         r.get(18)?,
+        created_at:       r.get(19)?,
+        started_at:       r.get(20)?,
+        finished_at:      r.get(21)?,
+        speed:            None,
+        eta:              None,
+        extra:            Default::default(),
+      });
+    }
+    Ok(items)
+  }
+
+  /// Returns true if the URL already exists in the download queue.
+  pub fn url_exists_in_queue(&self, url: &str) -> anyhow::Result<bool> {
+    let conn = self.conn.lock();
+    let count: i64 = conn.query_row(
+      "SELECT COUNT(*) FROM download_queue WHERE url = ?1",
+      params![url],
+      |row| row.get(0),
+    )?;
+    Ok(count > 0)
   }
 }
 
