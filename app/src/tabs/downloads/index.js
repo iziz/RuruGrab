@@ -11,6 +11,7 @@ let lastDownloadsSig = ''
 let downloadsById = new Map() // id -> row
 let dlNodeById = new Map()    // id -> HTMLElement (DOM node cache)
 let selectedTaskId = null
+let hoveredTaskId = null
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Pure utility helpers
@@ -348,9 +349,15 @@ function createDlItem(taskId) {
   menuBtn.title = 'Actions'
   menuBtn.textContent = '⋯'
 
+  const delBtn = document.createElement('button')
+  delBtn.className = 'dl-del-btn'
+  delBtn.title = 'Remove from list'
+  delBtn.textContent = '×'
+
   root.appendChild(thumbWrap)
   root.appendChild(body)
   root.appendChild(menuBtn)
+  root.appendChild(delBtn)
 
   root._refs = { img, placeholder, duration, siteTag, title, meta2, barBg, barFill, progressText }
   return root
@@ -633,8 +640,33 @@ export function initDownloadsEvents() {
     })
   }
 
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Delete' && hoveredTaskId) {
+      callDownloadAction(hoveredTaskId, 'delete', false)
+    }
+  })
+
   if (dom.dlList) {
+    dom.dlList.addEventListener('mouseover', (e) => {
+      const item = e.target.closest('.dl-item')
+      hoveredTaskId = item?.dataset?.taskId || null
+    })
+
+    dom.dlList.addEventListener('mouseleave', () => {
+      hoveredTaskId = null
+    })
+
     dom.dlList.addEventListener('click', (e) => {
+      const delBtn = e.target.closest('.dl-del-btn')
+      if (delBtn) {
+        const item = delBtn.closest('.dl-item')
+        const taskId = item?.dataset?.taskId
+        if (!taskId) return
+        e.stopPropagation()
+        callDownloadAction(taskId, 'delete', false)
+        return
+      }
+
       const btn = e.target.closest('.dl-menu-btn')
       if (!btn) return
       const item = btn.closest('.dl-item')

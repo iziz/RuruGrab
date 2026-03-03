@@ -595,12 +595,39 @@ input:focus {
   color: var(--text);
 }
 
+.dl-del-btn {
+  all: unset;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-muted);
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.12s, color 0.12s, opacity 0.12s;
+  flex-shrink: 0;
+  margin-top: auto;
+  margin-bottom: auto;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dl-item:hover .dl-del-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.dl-del-btn:hover {
+  background: var(--bg-hover);
+  color: var(--log-error);
+}
+
 /* context menu */
 .ctx-menu {
   position: fixed;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: 6px;
+  overflow: hidden;
   padding: 4px 0;
   min-width: 160px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
