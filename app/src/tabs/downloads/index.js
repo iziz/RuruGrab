@@ -1,7 +1,7 @@
 import { dom } from '../../dom.js'
 import { setText } from '../../domUtils.js'
 import { appendGuiLog } from '../../logger.js'
-import { apiFetch, toThumbSrc } from '../../api.js'
+import { apiFetch, toThumbSrc, openPath } from '../../api.js'
 import { API } from '../../config.js'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -526,6 +526,13 @@ export function showCtxMenuForTask(taskId, x, y) {
       cancelBtn.style.pointerEvents = 'auto'
     }
   }
+
+  const openFolderBtn = menu.querySelector('[data-action="open-folder"]')
+  if (openFolderBtn) {
+    const hasFile = !!row.filename
+    openFolderBtn.style.opacity = hasFile ? '1' : '0.4'
+    openFolderBtn.style.pointerEvents = hasFile ? 'auto' : 'none'
+  }
 }
 
 export function hideCtxMenu() {
@@ -610,7 +617,14 @@ export function initDownloadsEvents() {
       const taskId = selectedTaskId
       hideCtxMenu()
       if (!taskId) return
-      if (action0 === 'delete-files') {
+      if (action0 === 'open-folder') {
+        const row = downloadsById.get(taskId) || {}
+        const filename = String(row.filename || '')
+        if (filename) {
+          const dir = filename.replace(/[/\\][^/\\]*$/, '')
+          if (dir) await openPath(dir)
+        }
+      } else if (action0 === 'delete-files') {
         if (!confirm('All related files will be deleted. Do you want to continue?')) return
         await callDownloadAction(taskId, 'delete', true)
       } else if (action0) {

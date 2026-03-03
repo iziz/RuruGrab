@@ -32,6 +32,8 @@ export function renderApp(root) {
       <button class="ctx-menu-item" data-action="cancel">Cancel</button>
       <button class="ctx-menu-item" data-action="retry">Retry</button>
       <div class="ctx-menu-sep"></div>
+      <button class="ctx-menu-item" data-action="open-folder">Oepn Folder</button>
+      <div class="ctx-menu-sep"></div>
       <button class="ctx-menu-item" data-action="delete">Delete(from list)</button>
       <button class="ctx-menu-item danger" data-action="delete-files">Delete(with Files)</button>
     </div>
