@@ -322,11 +322,11 @@ impl Db {
   pub fn load_all_downloads(&self) -> anyhow::Result<Vec<DownloadItem>> {
     let conn = self.conn.lock();
     let mut stmt = conn.prepare(
-      "SELECT id, url, status, source, title, thumbnail, duration, uploader, resolution,\
-              fps, tbr, filename, percent, downloaded_bytes, total_bytes,\
-              downloaded_items, total_items, error, video_id, created_at, started_at, finished_at\
-       FROM download_queue\
-       ORDER BY created_at DESC\
+      "SELECT id, url, status, source, title, thumbnail, duration, uploader, resolution, \
+              fps, tbr, filename, percent, downloaded_bytes, total_bytes, \
+              downloaded_items, total_items, error, video_id, created_at, started_at, finished_at \
+       FROM download_queue \
+       ORDER BY created_at DESC \
        LIMIT 300",
     )?;
     let mut rows = stmt.query([])?;
@@ -363,11 +363,13 @@ impl Db {
     Ok(items)
   }
 
-  /// Returns true if the URL already exists in the download queue.
+  /// Returns true if the URL is actively in the queue (queued / starting / downloading).
+  /// Terminal states (done, failed, cancelled) are allowed to be re-added.
   pub fn url_exists_in_queue(&self, url: &str) -> anyhow::Result<bool> {
     let conn = self.conn.lock();
     let count: i64 = conn.query_row(
-      "SELECT COUNT(*) FROM download_queue WHERE url = ?1",
+      "SELECT COUNT(*) FROM download_queue \
+       WHERE url = ?1 AND status IN ('queued', 'starting', 'downloading')",
       params![url],
       |row| row.get(0),
     )?;
