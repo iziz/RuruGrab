@@ -45,7 +45,9 @@ pub async fn mark_done(
   });
 
   let mut local_thumb: Option<String> = None;
-  let prefer_local_thumb = matches!(handler, SourceHandler::Instagram);
+  // prefer_local_thumb: gallery-dl sources (Twitter, Instagram) always prefer a local
+  // file over a CDN URL after download, because CDN URLs can expire or require auth.
+  let prefer_local_thumb = matches!(handler, SourceHandler::Instagram | SourceHandler::TwitterX);
   let mut existing_thumb = {
     let inner = state.inner.lock();
     inner
@@ -69,7 +71,10 @@ pub async fn mark_done(
       filename = recent.first().map(|p| p.to_string_lossy().to_string());
     }
 
-    if existing_thumb.is_none() {
+    // When prefer_local_thumb, always attempt to use a local image even if
+    // existing_thumb (a CDN URL) was set by background metadata, because CDN
+    // URLs for Twitter/Instagram can expire by the time they're displayed.
+    if existing_thumb.is_none() || prefer_local_thumb {
       local_thumb =
         recent.iter().find(|p| is_image_path(p)).map(|p| p.to_string_lossy().to_string());
     }
@@ -84,7 +89,10 @@ pub async fn mark_done(
     }
   }
 
-  if local_thumb.is_none() && existing_thumb.is_none() || prefer_local_thumb {
+  // Only generate a video thumbnail if no local image was found yet.
+  // This prevents overwriting a perfectly good image thumb with a video frame,
+  // and avoids unnecessary ffmpeg work for YouTube (where existing_thumb is a CDN URL).
+  if local_thumb.is_none() && (existing_thumb.is_none() || prefer_local_thumb) {
     if let Some(f) = filename.as_deref() {
       let p = Path::new(f);
       if is_video_path(p) {
@@ -139,6 +147,13 @@ pub async fn mark_done(
       }
       if let Some(t) = local_thumb {
         it.thumbnail = Some(t);
+      } else if it.thumbnail.is_none() {
+        // Propagate existing_thumb (e.g. YouTube fallback CDN URL) if the item
+        // has no thumbnail yet. For Twitter/Instagram this is the CDN URL
+        // fallback used when local file detection failed.
+        if let Some(t) = existing_thumb {
+          it.thumbnail = Some(t);
+        }
       }
     }
   }

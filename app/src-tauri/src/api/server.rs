@@ -28,7 +28,10 @@ struct LogsQuery {
 
 #[derive(serde::Deserialize)]
 struct ThumbnailProxyQuery {
-  url: String,
+  /// Remote image URL to proxy (http/https)
+  url: Option<String>,
+  /// Local absolute file path — must be inside the download directory
+  path: Option<String>,
 }
 
 #[derive(serde::Deserialize)]
@@ -190,10 +193,72 @@ async fn get_logs(
   Json(LogsResponse { ok: true, lines })
 }
 
-async fn get_thumbnail_proxy(Query(q): Query<ThumbnailProxyQuery>) -> Response {
-  let url = q.url;
+async fn get_thumbnail_proxy(
+  State(state): State<Arc<AppState>>,
+  Query(q): Query<ThumbnailProxyQuery>,
+) -> Response {
+  // ── Local file path (served directly from disk) ──────────────────────────
+  if let Some(path_str) = q.path {
+    let file_path = std::path::PathBuf::from(&path_str);
+
+    // Security: only serve files that live inside the configured download dir.
+    let canonical_file = match file_path.canonicalize() {
+      Ok(p) => p,
+      Err(_) => return (axum::http::StatusCode::NOT_FOUND, "File not found").into_response(),
+    };
+    let canonical_dir = match state.download_dir().canonicalize() {
+      Ok(p) => p,
+      Err(_) => {
+        return (axum::http::StatusCode::INTERNAL_SERVER_ERROR, "Config error").into_response()
+      }
+    };
+    if !canonical_file.starts_with(&canonical_dir) {
+      return (axum::http::StatusCode::FORBIDDEN, "Path outside download dir").into_response();
+    }
+
+    let ext = canonical_file
+      .extension()
+      .and_then(|s| s.to_str())
+      .unwrap_or("")
+      .to_ascii_lowercase();
+    let content_type = match ext.as_str() {
+      "jpg" | "jpeg" => "image/jpeg",
+      "png" => "image/png",
+      "webp" => "image/webp",
+      "gif" => "image/gif",
+      _ => "image/jpeg",
+    };
+
+    return match tokio::fs::read(&canonical_file).await {
+      Ok(bytes) => {
+        let mut builder = Response::builder().status(axum::http::StatusCode::OK);
+        if let Ok(hv) = HeaderValue::from_str(content_type) {
+          builder = builder.header(axum::http::header::CONTENT_TYPE, hv);
+        }
+        builder = builder.header(axum::http::header::CACHE_CONTROL, "public, max-age=86400");
+        match builder.body(axum::body::Body::from(bytes)) {
+          Ok(res) => res,
+          Err(e) => {
+            (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()
+          }
+        }
+      }
+      Err(e) => {
+        (axum::http::StatusCode::NOT_FOUND, format!("Read error: {e}")).into_response()
+      }
+    };
+  }
+
+  // ── Remote URL proxy ──────────────────────────────────────────────────────
+  let url = match q.url {
+    Some(u) => u,
+    None => {
+      return (axum::http::StatusCode::BAD_REQUEST, "url or path required").into_response()
+    }
+  };
+
   if !url.starts_with("http://") && !url.starts_with("https://") {
-     return (axum::http::StatusCode::BAD_REQUEST, "Invalid URL").into_response();
+    return (axum::http::StatusCode::BAD_REQUEST, "Invalid URL").into_response();
   }
 
   let client = match reqwest::Client::builder()
@@ -238,13 +303,13 @@ async fn get_thumbnail_proxy(Query(q): Query<ThumbnailProxyQuery>) -> Response {
               Err(e) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
             }
           }
-          Err(e) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to read bytes: {}", e)).into_response(),
+          Err(e) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to read bytes: {e}")).into_response(),
         }
       } else {
         (axum::http::StatusCode::BAD_GATEWAY, format!("Upstream returned: {}", resp.status())).into_response()
       }
     }
-    Err(e) => (axum::http::StatusCode::BAD_GATEWAY, format!("Failed to fetch: {}", e)).into_response(),
+    Err(e) => (axum::http::StatusCode::BAD_GATEWAY, format!("Failed to fetch: {e}")).into_response(),
   }
 }
 

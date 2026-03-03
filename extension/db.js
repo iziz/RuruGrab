@@ -144,8 +144,11 @@ const YT_DLP_DB = (() => {
 
   async function clearAll() {
     const db = await open();
-    const tx = db.transaction(STORE_WATCHED, 'readwrite');
+    // Clear both watched and changelog atomically so that the bootstrap
+    // guard (countChangelog === 0) triggers correctly on the next sync.
+    const tx = db.transaction([STORE_WATCHED, STORE_CHANGELOG], 'readwrite');
     tx.objectStore(STORE_WATCHED).clear();
+    tx.objectStore(STORE_CHANGELOG).clear();
     await _txDone(tx);
     return { cleared: true };
   }

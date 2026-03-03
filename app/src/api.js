@@ -15,13 +15,19 @@ export function toThumbSrc(raw) {
 
   try {
     const u = new URL(r0, window.location.href)
-    if (u.pathname.endsWith('/thumbnail_proxy') && u.searchParams.has('url')) {
+    if (u.pathname.endsWith('/thumbnail_proxy') && (u.searchParams.has('url') || u.searchParams.has('path'))) {
       return u.toString()
     }
   } catch { /* ignore */ }
 
   if (/^https?:\/\//i.test(r0)) {
     return `${API}/thumbnail_proxy?url=${encodeURIComponent(r0)}`
+  }
+
+  // Local absolute path (Windows: C:\... or C:/..., Unix: /...)
+  // Route through the HTTP server to avoid Tauri asset-protocol scope issues.
+  if (/^[a-zA-Z]:[/\\]/.test(r0) || r0.startsWith('/')) {
+    return `${API}/thumbnail_proxy?path=${encodeURIComponent(r0)}`
   }
 
   if (!isTauri) return r0
