@@ -487,7 +487,11 @@ export function updateStatusUI(stRaw) {
   setText(dom.statusText, running ? 'RUNNING' : 'STOPPED')
   setText(dom.statusUrl, API)
 
-  if (st.sqlite_path) setText(dom.pathSqlite, st.sqlite_path)
+  if (st.sqlite_path) {
+    // Show the parent directory (e.g. ~/.rurugrab) instead of the file path
+    const dataDir = st.sqlite_path.replace(/[\\/][^\\/]+$/, '')
+    setText(dom.pathSqlite, dataDir)
+  }
   if (st.download_dir) setText(dom.pathDownloads, st.download_dir)
 
   setText(dom.dlQueueSize, String(st.queue_size || 0))

@@ -295,12 +295,20 @@ function _applySqliteGateUI({ ok, reason }) {
   _sqliteServerOk = !!ok;
 
   const syncBtn = $('sqliteSyncNowBtn');
+  const restoreBtn = $('sqliteRestoreBtn');
 
   if (syncBtn) {
     if (_sqliteSyncNowBtnLabel == null) _sqliteSyncNowBtnLabel = syncBtn.textContent;
     syncBtn.disabled = !_sqliteServerOk;
     syncBtn.title = _sqliteServerOk ? '' : `Only available when the server (server.py) is running. (${reason || 'unreachable'})`;
     syncBtn.textContent = _sqliteSyncNowBtnLabel;
+  }
+
+  if (restoreBtn) {
+    if (_sqliteRestoreBtnLabel == null) _sqliteRestoreBtnLabel = restoreBtn.textContent;
+    restoreBtn.disabled = !_sqliteServerOk;
+    restoreBtn.title = _sqliteServerOk ? '' : `Only available when the server (server.py) is running. (${reason || 'unreachable'})`;
+    restoreBtn.textContent = _sqliteRestoreBtnLabel;
   }
 
   // Update status badge
@@ -591,6 +599,50 @@ $('sqliteSyncNowBtn')?.addEventListener('click', async () => {
 });
 
 
+// Restore from server (full download)
+$('sqliteRestoreBtn')?.addEventListener('click', async () => {
+  const gate = await refreshSqliteServerAvailability({ force: true }).catch(() => ({ ok: false, reason: 'unreachable' }));
+  if (!gate?.ok) {
+    log(`Failed: server is not running. (${gate?.reason || 'unreachable'})`);
+    return;
+  }
+
+  const ok = confirm(
+    '서버에서 전체 데이터를 새로 받습니다.\n'
+    + '로컬 DB를 초기화하고 서버 데이터로 덮어씁니다.\n\n'
+    + '계속하시겠습니까?'
+  );
+  if (!ok) return;
+
+  const restoreBtn = $('sqliteRestoreBtn');
+  const syncBtn = $('sqliteSyncNowBtn');
+  if (restoreBtn) { restoreBtn.disabled = true; restoreBtn.textContent = '받는 중...'; }
+  if (syncBtn) syncBtn.disabled = true;
+
+  log('Restoring from server (full download)...');
+  const resp = await sendRuntimeMessage({ type: 'SQLITE_RESTORE', wipe: true })
+    .catch((e) => ({ ok: false, error: String(e) }));
+
+  if (restoreBtn) { restoreBtn.disabled = false; restoreBtn.textContent = '서버에서 새로 받기'; }
+  if (syncBtn) syncBtn.disabled = false;
+
+  const progressEl = $('syncProgress');
+  if (progressEl) progressEl.textContent = '';
+
+  if (!resp?.ok) {
+    log(`Restore failed: ${resp?.error || 'unknown error'}`);
+    await refreshSqliteStatus();
+    return;
+  }
+
+  log(`Restore complete: ${(resp.restored ?? 0).toLocaleString()} items downloaded from server`);
+  await refreshSqliteStatus();
+  await refreshCount();
+  await refreshStats();
+  notifyYouTubeTabsRefresh();
+});
+
+
 $('importHistoryAllBtn').addEventListener('click', async () => {
   const includeShorts = $('historyIncludeShorts').checked;
   const { historyMaxResults } = await chrome.storage.local.get(DEFAULT_UI);
@@ -657,17 +709,17 @@ $('cancelYouTubeHistoryBtn')?.addEventListener('click', () => {
 
 // Progress messages from background
 
-// Google Takeout JSON import (#10)
-$('importTakeoutBtn')?.addEventListener('click', () => {
-  $('takeoutFile')?.click();
+// JSON import (Google Takeout or RuruGrab export)
+$('importJsonBtn')?.addEventListener('click', () => {
+  $('importJsonFile')?.click();
 });
 
-$('takeoutFile')?.addEventListener('change', async (e) => {
+$('importJsonFile')?.addEventListener('change', async (e) => {
   const file = e.target?.files?.[0];
   if (!file) return;
   e.target.value = '';
 
-  log(`Reading Takeout file: ${file.name} (${(file.size / 1024).toFixed(1)} KB)...`);
+  log(`Reading JSON file: ${file.name} (${(file.size / 1024).toFixed(1)} KB)...`);
 
   try {
     const text = await file.text();
@@ -678,37 +730,6 @@ $('takeoutFile')?.addEventListener('change', async (e) => {
       log(`Failed: ${resp?.error || 'unknown error'}`);
     } else {
       log(`Done: parsed ${resp.parsed?.toLocaleString()} entries → found ${resp.found?.toLocaleString()} videoIds → added ${resp.inserted?.toLocaleString()}`);
-    }
-  } catch (err) {
-    log(`Failed: ${err.message || err}`);
-  }
-
-  await refreshCount();
-  await refreshStats();
-  notifyYouTubeTabsRefresh();
-});
-
-// JSON import (restore from exported JSON)
-$('importJsonBtn')?.addEventListener('click', () => {
-  $('importJsonFile')?.click();
-});
-
-$('importJsonFile')?.addEventListener('change', async (e) => {
-  const file = e.target?.files?.[0];
-  if (!file) return;
-  e.target.value = '';
-
-  log(`Reading JSON file: ${file.name}...`);
-
-  try {
-    const text = await file.text();
-    const resp = await sendRuntimeMessage({ type: 'IMPORT_TAKEOUT', jsonText: text })
-      .catch((err) => ({ ok: false, error: String(err) }));
-
-    if (!resp?.ok) {
-      log(`Failed: ${resp?.error || 'unknown error'}`);
-    } else {
-      log(`Done: restored ${resp.found?.toLocaleString()} items → added ${resp.inserted?.toLocaleString()} new`);
     }
   } catch (err) {
     log(`Failed: ${err.message || err}`);

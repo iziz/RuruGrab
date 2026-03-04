@@ -50,16 +50,26 @@
   BG.broadcastSyncProgress = broadcastSyncProgress;
 
   //  Pull finalization (shared by sync paths)
-  async function finalizePull(resp, sinceSeq, totalPushed) {
+  async function finalizePull(resp, sinceSeq, totalPushed, pushedActions) {
     const remoteChanges = resp.remote_changes || [];
     let appliedCount = 0;
 
     if (remoteChanges.length) {
-      broadcastSyncProgress(`↓ Applying ${remoteChanges.length} remote changes...`);
-      const result = await YT_DLP_DB.applyRemoteChanges(remoteChanges);
-      appliedCount = result?.applied || 0;
+      // Skip echo-back: only skip when the server returns the SAME action
+      // we pushed.  If actions differ (e.g. we pushed unwatch but server
+      // kept watch because our ts was older), we must apply the server's version.
+      const skip = pushedActions || new Map();
+      const toApply = skip.size
+        ? remoteChanges.filter((c) => skip.get(c.id) !== c.action)
+        : remoteChanges;
 
-      for (const c of remoteChanges) {
+      if (toApply.length) {
+        broadcastSyncProgress(`↓ Applying ${toApply.length} remote changes...`);
+        const result = await YT_DLP_DB.applyRemoteChanges(toApply);
+        appliedCount = result?.applied || 0;
+      }
+
+      for (const c of toApply) {
         if (c.action === 'watch') BG.cacheWatched(c.id);
         else BG.uncacheWatched(c.id);
       }
@@ -96,6 +106,7 @@
 
     const CHUNK = 5000;
     let totalPushed = 0;
+    const pushedActions = new Map(); // id → last pushed action
 
     // Bootstrap: ensure ALL local records are in changelog.
     // Runs ONLY when changelog is completely empty (first setup or after full wipe).
@@ -159,11 +170,12 @@
 
       const keys = unpushed.map((c) => c.key);
       await YT_DLP_DB.markChangesPushed(keys);
+      for (const c of changes) pushedActions.set(c.id, c.action);
       totalPushed += changes.length;
       // NOTE: sinceSeq is NOT updated here — see comment above.
 
       if (unpushed.length < CHUNK) {
-        return await finalizePull(resp, sinceSeq, totalPushed);
+        return await finalizePull(resp, sinceSeq, totalPushed, pushedActions);
       }
     }
 
@@ -184,7 +196,7 @@
       const resp = await r.json();
       if (!resp?.ok) throw new Error(resp?.error || 'sync_changes returned not ok');
 
-      return await finalizePull(resp, sinceSeq, totalPushed);
+      return await finalizePull(resp, sinceSeq, totalPushed, pushedActions);
     } catch (e) {
       throw e;
     }
@@ -247,6 +259,7 @@
 
     // Normal incremental sync
     const result = await syncChanges();
+    const localCountAfter = await YT_DLP_DB.count().catch(() => localCount);
 
     return {
       ok: result.ok,
@@ -255,7 +268,7 @@
       serverCountBefore: result.serverCount ?? null,
       serverCountAfter: result.serverCount ?? null,
       rowCount: result.serverCount ?? null,
-      localCount: localCount,
+      localCount: localCountAfter,
       forcedFull: false,
       resetUpdated: 0,
       pulled: result.pulled ?? 0,
@@ -294,6 +307,11 @@
 
       if (records.length) {
         await YT_DLP_DB.putMany(records, { chunkSize: 2000 });
+        // Mark as already-pushed in changelog so bootstrap won't re-push
+        await YT_DLP_DB.appendChangeBatch(
+          records.map((r) => ({ id: r.id, action: 'watch', ts: r.ts })),
+          { pushed: 1 },
+        );
         restored += records.length;
         for (const r of records) BG.cacheWatched(r.id);
       }

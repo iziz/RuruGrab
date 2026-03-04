@@ -121,6 +121,8 @@
       if (directId && directId.length === 11) {
         videoId = directId;
       } else if (url) {
+        // Only YouTube IDs — skip Twitter/Instagram
+        if (!url.includes('youtube.com') && !url.includes('youtu.be')) continue;
         videoId = BG.extractVideoId(url);
       }
 

@@ -202,15 +202,18 @@ impl Db {
     }
 
     // ── Phase 2: Return remote changes (pull) ─────────────
+    // No instance filter: if the client lost items locally, it can
+    // recover them via pull.  The echo-back of just-pushed items is
+    // harmless because the client applies them idempotently.
     let mut stmt = conn.prepare(
       "SELECT video_id, ts, deleted, seq FROM watched \
-       WHERE seq > ?1 AND instance != ?2 \
+       WHERE seq > ?1 \
        ORDER BY seq ASC \
        LIMIT 50000",
     )?;
 
     let mut remote: Vec<RemoteChange> = Vec::new();
-    let mut rows = stmt.query(params![since_seq, instance])?;
+    let mut rows = stmt.query(params![since_seq])?;
     while let Some(r) = rows.next()? {
       let deleted: i64 = r.get(2)?;
       remote.push(RemoteChange {

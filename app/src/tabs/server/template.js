@@ -18,7 +18,7 @@ export const template = `
   <div class="card">
     <div class="card-title">Paths</div>
     <div class="path-grid">
-      <span class="path-label">SQLite DB</span>
+      <span class="path-label">Data</span>
       <span class="path-value" id="pathSqlite">-</span>
       <button class="btn btn-default btn-sm" id="btnOpenSqlite">Open</button>
 

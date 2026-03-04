@@ -76,23 +76,8 @@ pub struct RenamerApplyResult {
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 fn app_data_dir() -> PathBuf {
-  if cfg!(target_os = "windows") {
-    let base = env::var("LOCALAPPDATA")
-      .or_else(|_| env::var("APPDATA"))
-      .unwrap_or_else(|_| {
-        let home = env::var("USERPROFILE").unwrap_or_else(|_| ".".to_string());
-        format!("{home}\\AppData\\Local")
-      });
-    let p = PathBuf::from(base).join("RuruGrab");
-    let _ = std::fs::create_dir_all(&p);
-    return p;
-  }
-
-  let base = env::var("XDG_CONFIG_HOME").unwrap_or_else(|_| {
-    let home = env::var("HOME").unwrap_or_else(|_| ".".to_string());
-    format!("{home}/.config")
-  });
-  let p = PathBuf::from(base).join("RuruGrab");
+  let home = dirs_next::home_dir().unwrap_or_else(|| PathBuf::from("."));
+  let p = home.join(".rurugrab");
   let _ = std::fs::create_dir_all(&p);
   p
 }
@@ -292,12 +277,17 @@ pub fn load_settings_internal() -> (GlobalSettings, String) {
                   r.get("pattern").and_then(|x| x.as_str()).unwrap_or("").to_string();
                 let replace =
                   r.get("replace").and_then(|x| x.as_str()).unwrap_or("").to_string();
-                let apply_to =
-                  r.get("apply_to").and_then(|x| x.as_str()).unwrap_or("stem").to_string();
+                let apply_to = r
+                  .get("applyTo")
+                  .or_else(|| r.get("apply_to"))
+                  .and_then(|x| x.as_str())
+                  .unwrap_or("stem")
+                  .to_string();
                 let case = r.get("case").and_then(|x| x.as_str()).unwrap_or("").to_string();
 
                 let when_val = r
-                  .get("when_contains")
+                  .get("whenContains")
+                  .or_else(|| r.get("when_contains"))
                   .or_else(|| r.get("filename_contains"))
                   .or_else(|| r.get("name_contains"));
 
@@ -321,7 +311,8 @@ pub fn load_settings_internal() -> (GlobalSettings, String) {
                 }
 
                 let contains_ignore_case = r
-                  .get("contains_ignore_case")
+                  .get("containsIgnoreCase")
+                  .or_else(|| r.get("contains_ignore_case"))
                   .or_else(|| r.get("contains_icase"))
                   .and_then(|x| x.as_bool())
                   .unwrap_or(false);

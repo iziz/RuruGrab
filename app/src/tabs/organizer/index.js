@@ -159,11 +159,13 @@ export async function initOrganizerEvents() {
     const p = event.payload
     orgSetProgress(p.done, p.total, p.filename)
   })
-  await listen('organizer:move_finished', (event) => {
+  await listen('organizer:move_finished', async (event) => {
     const r = event.payload
     if (org.summary) org.summary.textContent = `Done: moved=${r.moved}, skipped=${r.skipped}, failed=${r.failed}, folders=${r.createdFolders}`
     orgSetStatus(r.failed > 0 ? 'error' : 'done', 'READY')
     orgSetBusy(false)
+    // Re-scan to reflect the updated folder state
+    if (organizerFolder) await orgScan()
   })
   await listen('organizer:log', (event) => {
     if (org.summary) org.summary.textContent = event.payload.message

@@ -121,16 +121,10 @@
             history you have, the longer it takes.</p>
 
           <div class="btnRow">
-            <button id="importTakeoutBtn">Google Takeout JSON</button>
-            <input type="file" id="takeoutFile" accept=".json" style="display:none;" />
-          </div>
-          <p class="helpNote">Import watch-history.json from Google Takeout or a previously exported JSON file.</p>
-
-          <div class="btnRow">
             <button id="importJsonBtn">Import JSON</button>
             <input type="file" id="importJsonFile" accept=".json" style="display:none;" />
           </div>
-          <p class="helpNote">Restore from a previously exported RuruGrab JSON file.</p>
+          <p class="helpNote">Import from Google Takeout (watch-history.json) or a previously exported RuruGrab JSON file.</p>
         </div>
 
         <!-- Export / Reset -->
@@ -206,6 +200,7 @@
 
       <div class="actions">
         <span id="syncProgress" class="syncProgress" aria-live="polite"></span>
+        <button id="sqliteRestoreBtn">서버에서 새로 받기</button>
         <button id="sqliteSyncNowBtn" class="primary">싱크하기</button>
       </div>
 

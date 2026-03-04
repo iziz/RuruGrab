@@ -127,16 +127,17 @@ const YT_DLP_DB = (() => {
     return { deleted };
   }
 
-  async function appendChangeBatch(entries) {
+  async function appendChangeBatch(entries, { pushed = 0 } = {}) {
     if (!entries || !entries.length) return;
     const db = await open();
     const CHUNK = 2000;
+    const flag = pushed ? 1 : 0;
     for (let i = 0; i < entries.length; i += CHUNK) {
       const chunk = entries.slice(i, i + CHUNK);
       const tx = db.transaction(STORE_CHANGELOG, 'readwrite');
       const store = tx.objectStore(STORE_CHANGELOG);
       for (const e of chunk) {
-        store.add({ id: e.id, action: e.action, ts: e.ts, pushed: 0 });
+        store.add({ id: e.id, action: e.action, ts: e.ts, pushed: flag });
       }
       await _txDone(tx);
     }

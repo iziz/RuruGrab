@@ -2,7 +2,7 @@ export const template = `
 <section id="tab-renamer" class="tab-panel renamer-panel">
   <div style="display:flex;flex-direction:row;gap:12px;flex:1;min-height:0;overflow:hidden;">
     <div style="flex:6;display:flex;flex-direction:column;gap:12px;min-width:0;min-height:0;">
-      <div class="card" style="flex:7;display:flex;flex-direction:column;min-height:0;">
+      <div class="card" style="flex:7;display:flex;flex-direction:column;min-height:0;overflow:hidden;">
         <div class="card-title">Rules</div>
         <div class="status-row">
           <div class="status-indicator">
@@ -10,7 +10,7 @@ export const template = `
             <span id="renStatusText">READY</span>
           </div>
         </div>
-        <div id="renRulesWrap" class="sqlite-table-wrap mt-12">
+        <div id="renRulesWrap" class="sqlite-table-wrap mt-12" style="flex:1;overflow-y:auto;min-height:0;">
           <table class="preview-table" style="table-layout:fixed;">
             <thead>
               <tr>
@@ -39,7 +39,7 @@ export const template = `
         </div>
       </div>
 
-      <div class="card" style="flex:3;display:flex;flex-direction:column;min-height:0;">
+      <div class="card" style="flex:3;display:flex;flex-direction:column;min-height:120px;">
         <div class="card-title">Tester</div>
         <div style="display:flex;flex-direction:column;gap:10px;flex:1;min-height:0;">
           <div class="flex-col gap-4">
