@@ -1,7 +1,7 @@
 import { listen } from '@tauri-apps/api/event'
 import { invoke } from '@tauri-apps/api/core'
 import { open as openFileDialog } from '@tauri-apps/plugin-dialog'
-import { $ } from '../../domUtils.js'
+import { $, showStatus } from '../../domUtils.js'
 import { org, orgGetCollision } from '../organizer/index.js'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -244,8 +244,10 @@ async function renSaveSettings() {
     }
     await invoke('save_settings', { settings })
     if (ren.summary) ren.summary.textContent = 'Settings saved.'
+    showStatus('Settings saved', 'success')
   } catch (e) {
     if (ren.summary) ren.summary.textContent = `Settings save failed: ${String(e)}`
+    showStatus(`Settings save failed: ${String(e)}`, 'error')
   } finally {
     renSetBusy(false)
   }
@@ -357,9 +359,11 @@ async function renDoRename() {
     const ok = result.results.filter((r) => r.status === 'OK').length
     const err = result.results.filter((r) => r.status.startsWith('ERR')).length
     if (ren.summary) ren.summary.textContent = `Done: ${ok} OK / ${err} ERR`
+    showStatus(`Rename done: ${ok} OK / ${err} ERR`, err > 0 ? 'error' : 'success')
     renSetStatus('ready', 'READY')
   } catch (e) {
     if (ren.summary) ren.summary.textContent = `Rename failed: ${String(e)}`
+    showStatus(`Rename failed: ${String(e)}`, 'error')
     renSetStatus('error', 'ERROR')
   } finally {
     renSetBusy(false)

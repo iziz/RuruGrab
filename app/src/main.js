@@ -1,6 +1,6 @@
 import { listen } from '@tauri-apps/api/event'
 
-import { $, $$ } from './domUtils.js'
+import { $, $$, showStatus } from './domUtils.js'
 import { appendLog, appendGuiLog, renderSubTab, setActiveLogTab, logEntries } from './logger.js'
 import { apiFetch, openPath } from './api.js'
 import { API } from './config.js'
@@ -15,9 +15,9 @@ import { initDupFinderEvents } from './tabs/dupfinder/index.js'
 // ─────────────────────────────────────────────────────────────────────────────
 // Tab switching
 // ─────────────────────────────────────────────────────────────────────────────
-$$('.tab-btn').forEach((btn) => {
+$$('.sidebar-item').forEach((btn) => {
   btn.addEventListener('click', () => {
-    $$('.tab-btn').forEach((b) => b.classList.remove('active'))
+    $$('.sidebar-item').forEach((b) => b.classList.remove('active'))
     $$('.tab-panel').forEach((p) => p.classList.remove('active'))
     btn.classList.add('active')
     $(`#tab-${btn.dataset.tab}`)?.classList.add('active')
@@ -43,6 +43,7 @@ $('#btnOpenUrl')?.addEventListener('click', () => openPath(API))
 $('#btnCopyUrl')?.addEventListener('click', () => {
   navigator.clipboard.writeText(API).catch(() => { })
   appendGuiLog('[GUI] URL copied to clipboard')
+  showStatus('URL copied to clipboard', 'success')
 })
 $('#btnOpenSqlite')?.addEventListener('click', () => {
   const p = String(dom.pathSqlite?.textContent ?? '').trim()

@@ -1,8 +1,7 @@
 import { invoke } from '@tauri-apps/api/core'
 import { open as openFileDialog } from '@tauri-apps/plugin-dialog'
 import { listen } from '@tauri-apps/api/event'
-import { $, $$ } from '../../domUtils.js'
-import { escHtml } from '../../domUtils.js'
+import { $, $$, escHtml, showStatus } from '../../domUtils.js'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DOM references
@@ -213,8 +212,10 @@ async function startScan() {
             dup.summary().textContent = `Scanned: ${result.totalScanned} files | Groups: ${result.totalGroups} | Duplicates: ${result.totalDuplicates}`
         }
         setProgress(result.totalScanned, `Done — ${result.totalGroups} duplicate groups found`)
+        showStatus(`Dedup: ${result.totalGroups} groups, ${result.totalDuplicates} duplicates found`, result.totalGroups > 0 ? 'info' : 'success')
     } catch (e) {
         setProgress(0, `Scan failed: ${String(e)}`)
+        showStatus(`Dedup scan failed: ${String(e)}`, 'error')
     } finally {
         setBusy(false)
     }
@@ -252,6 +253,7 @@ async function deleteSelected() {
         let msg = `Deleted: ${result.deleted}`
         if (result.failed > 0) msg += `, Failed: ${result.failed}`
         if (dup.progressText()) dup.progressText().textContent = msg
+        showStatus(msg, result.failed > 0 ? 'error' : 'success')
 
         // Re-scan to refresh results
         if (folders.length > 0) {

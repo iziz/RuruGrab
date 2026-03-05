@@ -24,3 +24,40 @@ export function escHtml(value) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;')
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Status bar — single-line message at the bottom of the app
+// ─────────────────────────────────────────────────────────────────────────────
+let _statusTimer = null
+
+/**
+ * Show a message in the bottom status bar.
+ * @param {string} msg   - Text to display
+ * @param {'info'|'success'|'error'} [type='info'] - Message type (affects colour)
+ * @param {number} [duration=5000] - Auto-fade after ms (0 = sticky)
+ */
+export function showStatus(msg, type = 'info', duration = 5000) {
+  const el = document.getElementById('statusBarMsg')
+  const timeEl = document.getElementById('statusBarTime')
+  if (!el) return
+
+  if (_statusTimer) { clearTimeout(_statusTimer); _statusTimer = null }
+
+  el.classList.remove('fade-out', 'is-error', 'is-success')
+  if (type === 'error') el.classList.add('is-error')
+  else if (type === 'success') el.classList.add('is-success')
+  el.textContent = msg
+  el.style.opacity = ''
+
+  if (timeEl) {
+    const now = new Date()
+    timeEl.textContent = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
+  }
+
+  if (duration > 0) {
+    _statusTimer = setTimeout(() => {
+      el.classList.add('fade-out')
+      _statusTimer = null
+    }, duration)
+  }
+}

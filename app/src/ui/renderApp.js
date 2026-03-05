@@ -12,30 +12,46 @@ export function renderApp(root) {
         <img class="app-icon" src="/app-icon.png" alt="RuruGrab app icon" />
         <h1>RuruGrab</h1>
       </div>
-      <span class="version">1.0.0</span>
     </header>
 
-    <nav class="tab-bar">
-      <button class="tab-btn active" data-tab="server">Environment</button>
-      <button class="tab-btn" data-tab="downloads">Downloads</button>
-      <button class="tab-btn" data-tab="sqlite">YouTube DB</button>
-      <button class="tab-btn" data-tab="organizer">Organizer</button>
-      <button class="tab-btn" data-tab="renamer">ReNamer</button>
-      <button class="tab-btn" data-tab="dupfinder">Duplicate Finder</button>
-    </nav>
+    <div class="app-body">
+      <nav class="sidebar">
+        <div class="sidebar-group">📥 Grab</div>
+        <button class="sidebar-item active" data-tab="downloads">Download</button>
 
-    ${serverTemplate}
-    ${downloadsTemplate}
-    ${sqliteTemplate}
-    ${organizerTemplate}
-    ${renamerTemplate}
-    ${dupfinderTemplate}
+        <div class="sidebar-group">🔧 Tools</div>
+        <button class="sidebar-item" data-tab="organizer">Organize</button>
+        <button class="sidebar-item" data-tab="renamer">Rename</button>
+        <button class="sidebar-item" data-tab="dupfinder">Dedup</button>
+
+        <div class="sidebar-group">⚙ System</div>
+        <button class="sidebar-item" data-tab="server">Status</button>
+        <button class="sidebar-item" data-tab="sqlite">DB</button>
+
+        <div class="sidebar-spacer"></div>
+        <span class="sidebar-version">v1.0.0</span>
+      </nav>
+
+      <div class="content-area">
+        ${downloadsTemplate}
+        ${serverTemplate}
+        ${sqliteTemplate}
+        ${organizerTemplate}
+        ${renamerTemplate}
+        ${dupfinderTemplate}
+      </div>
+    </div>
+
+    <footer id="statusBar" class="status-bar">
+      <span id="statusBarMsg" class="status-bar-msg"></span>
+      <span id="statusBarTime" class="status-bar-time"></span>
+    </footer>
 
     <div id="ctxMenu" class="ctx-menu">
       <button class="ctx-menu-item" data-action="cancel">Cancel</button>
       <button class="ctx-menu-item" data-action="retry">Retry</button>
       <div class="ctx-menu-sep"></div>
-      <button class="ctx-menu-item" data-action="open-folder">Oepn Folder</button>
+      <button class="ctx-menu-item" data-action="open-folder">Open Folder</button>
       <div class="ctx-menu-sep"></div>
       <button class="ctx-menu-item" data-action="delete">Delete(from list)</button>
       <button class="ctx-menu-item danger" data-action="delete-files">Delete(with Files)</button>

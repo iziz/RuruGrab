@@ -1,5 +1,5 @@
 export const template = `
-<section id="tab-server" class="tab-panel active">
+<section id="tab-server" class="tab-panel">
   <div class="card">
     <div class="card-title">Server Status</div>
     <div class="status-row">

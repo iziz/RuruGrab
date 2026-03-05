@@ -1,7 +1,7 @@
 import { listen } from '@tauri-apps/api/event'
 import { invoke } from '@tauri-apps/api/core'
 import { open as openFileDialog } from '@tauri-apps/plugin-dialog'
-import { $ } from '../../domUtils.js'
+import { $, showStatus } from '../../domUtils.js'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Organizer DOM references
@@ -115,9 +115,11 @@ async function orgScan() {
     })
     orgRenderPreview(result)
     if (org.summary) org.summary.textContent = `Total: ${result.totalFiles} files / Matched: ${result.matchedFiles} / Groups: ${result.groups.length}`
+    showStatus(`Organize: scanned ${result.totalFiles} files, ${result.matchedFiles} matched`, 'info')
     orgSetStatus('done', 'READY')
   } catch (e) {
     if (org.summary) org.summary.textContent = `Scan failed: ${String(e)}`
+    showStatus(`Organize scan failed: ${String(e)}`, 'error')
     orgSetStatus('error', 'ERROR')
   } finally {
     orgSetBusy(false)
@@ -162,6 +164,7 @@ export async function initOrganizerEvents() {
   await listen('organizer:move_finished', async (event) => {
     const r = event.payload
     if (org.summary) org.summary.textContent = `Done: moved=${r.moved}, skipped=${r.skipped}, failed=${r.failed}, folders=${r.createdFolders}`
+    showStatus(`Organize done: ${r.moved} moved, ${r.skipped} skipped, ${r.failed} failed`, r.failed > 0 ? 'error' : 'success')
     orgSetStatus(r.failed > 0 ? 'error' : 'done', 'READY')
     orgSetBusy(false)
     // Re-scan to reflect the updated folder state
