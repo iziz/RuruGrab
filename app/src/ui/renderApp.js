@@ -3,6 +3,7 @@ import { template as downloadsTemplate } from '../tabs/downloads/template.js'
 import { template as sqliteTemplate } from '../tabs/sqlite/template.js'
 import { template as organizerTemplate } from '../tabs/organizer/template.js'
 import { template as renamerTemplate } from '../tabs/renamer/template.js'
+import { template as dupfinderTemplate } from '../tabs/dupfinder/template.js'
 
 export function renderApp(root) {
   root.innerHTML = `
@@ -20,6 +21,7 @@ export function renderApp(root) {
       <button class="tab-btn" data-tab="sqlite">YouTube DB</button>
       <button class="tab-btn" data-tab="organizer">Organizer</button>
       <button class="tab-btn" data-tab="renamer">ReNamer</button>
+      <button class="tab-btn" data-tab="dupfinder">Duplicate Finder</button>
     </nav>
 
     ${serverTemplate}
@@ -27,6 +29,7 @@ export function renderApp(root) {
     ${sqliteTemplate}
     ${organizerTemplate}
     ${renamerTemplate}
+    ${dupfinderTemplate}
 
     <div id="ctxMenu" class="ctx-menu">
       <button class="ctx-menu-item" data-action="cancel">Cancel</button>

@@ -1,5 +1,6 @@
 mod api;
 mod core;
+mod dupfinder;
 mod organizer;
 mod renamer;
 
@@ -177,6 +178,8 @@ pub fn run() {
       renamer::renamer_expand_inputs,
       renamer::renamer_preview_names,
       renamer::renamer_apply_rename,
+      dupfinder::dupfinder_scan,
+      dupfinder::dupfinder_delete,
     ])
     .build(tauri::generate_context!())
     .expect("error while building tauri application")

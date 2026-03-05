@@ -10,6 +10,7 @@ import { refreshStatus, queueDownload, updateStatusUI, initDownloadsEvents } fro
 import { refreshSqlite, initSqliteEvents } from './tabs/sqlite/index.js'
 import { initOrganizerEvents } from './tabs/organizer/index.js'
 import { initRenamerEvents, renLoadSettings } from './tabs/renamer/index.js'
+import { initDupFinderEvents } from './tabs/dupfinder/index.js'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tab switching
@@ -74,7 +75,7 @@ async function loadLogs(maxLines = 2000) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Tauri event listeners
 // ─────────────────────────────────────────────────────────────────────────────
-;(async () => {
+; (async () => {
   try {
     await listen('rurugrab:log', (e) => {
       if (typeof e.payload === 'string') appendLog(e.payload)
@@ -101,6 +102,7 @@ initDownloadsEvents()
 initSqliteEvents()
 await initOrganizerEvents()
 await initRenamerEvents()
+await initDupFinderEvents()
 void renLoadSettings()
 
 // Initial data load

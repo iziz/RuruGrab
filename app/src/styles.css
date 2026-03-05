@@ -1259,3 +1259,231 @@ table.preview-table tr.selected>td {
   vertical-align: middle;
   text-align: center;
 }
+
+/* ── Duplicate Finder tab layout ───────────────────────────────────────── */
+.dupfinder-panel {
+  display: none;
+  flex-direction: row !important;
+  gap: 16px;
+  overflow: hidden;
+}
+
+.dupfinder-panel.active {
+  display: flex !important;
+}
+
+.dup-left {
+  flex: 4;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow-y: auto;
+}
+
+.dup-right {
+  flex: 6;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Folder list */
+.dup-folder-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.dup-folder-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.dup-folder-path {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+  font-family: var(--font-mono, monospace);
+}
+
+.dup-folder-remove {
+  all: unset;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 14px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: background 0.12s, color 0.12s;
+}
+
+.dup-folder-remove:hover {
+  background: var(--danger);
+  color: #fff;
+}
+
+/* Results card */
+.dup-results-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.dup-results-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.dup-results-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dup-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 14px;
+  padding: 48px 16px;
+}
+
+.dup-empty-icon {
+  font-size: 36px;
+}
+
+/* Duplicate group */
+.dup-group {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--bg-base);
+}
+
+.dup-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.dup-group-badge {
+  background: var(--accent);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.dup-group-key {
+  color: var(--text-muted);
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.dup-group-size {
+  color: var(--text-muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+/* File row */
+.dup-group-files {
+  display: flex;
+  flex-direction: column;
+}
+
+.dup-file-row {
+  border-bottom: 1px solid var(--border);
+}
+
+.dup-file-row:last-child {
+  border-bottom: none;
+}
+
+.dup-file-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.dup-file-label:hover {
+  background: var(--bg-hover);
+}
+
+.dup-file-check {
+  flex-shrink: 0;
+}
+
+.dup-file-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dup-file-name {
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dup-file-path-small {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: var(--font-mono, monospace);
+}
+
+.dup-file-size {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Progress pulse animation */
+@keyframes dup-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
