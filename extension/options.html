@@ -30,13 +30,21 @@
           <p class="help">Adjust badge text and background, text, and border colors (including alpha). Changes will be
             reflected immediately in the open YouTube tab when saved.</p>
         </div>
-        <div class="previewDock">
+        <div id="previewDock" class="previewDock">
           <span class="statLabel">Preview</span>
           <span id="badgePreview" class="badgePreview">WATCHED</span>
         </div>
       </div>
 
       <div class="form">
+        <div class="formRow">
+          <span class="label">Show on YouTube</span>
+          <label class="check" for="watchedBadgeEnabled">
+            <input type="checkbox" id="watchedBadgeEnabled" />
+            <span>Enable watched record badge</span>
+          </label>
+        </div>
+
         <div class="formRow">
           <label class="label" for="badgeText">Text</label>
           <input type="text" id="badgeText" placeholder="WATCHED" />

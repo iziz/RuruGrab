@@ -374,6 +374,16 @@ button.danger:hover {
   transition: background 200ms ease, color 200ms ease, border-color 200ms ease;
 }
 
+.previewDock.isDisabled {
+  opacity: 0.55;
+}
+
+.badgePreview.isDisabled {
+  background: rgba(255,255,255,0.08) !important;
+  color: rgba(240,242,250,0.5) !important;
+  border-color: rgba(255,255,255,0.12) !important;
+}
+
 /* ── color controls ── */
 .colorStack { display: flex; flex-direction: column; gap: 10px; }
 

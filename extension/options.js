@@ -31,7 +31,7 @@ function sendTabMessage(tabId, msg) {
 
 const DEFAULT_SETTINGS = UTH_CONSTANTS.DEFAULT_SETTINGS;
 
-// The "Enable watched marking" / "Show badge" options were removed and are now forced ON.
+// Visibility defaults for watched UI on YouTube.
 const FORCED_MARKING_SETTINGS = UTH_CONSTANTS.FORCED_MARKING_SETTINGS;
 
 const DEFAULT_UI = UTH_CONSTANTS.DEFAULT_UI;
@@ -40,6 +40,31 @@ const DEFAULT_SQLITE_SYNC = UTH_CONSTANTS.DEFAULT_SQLITE_SYNC;
 
 
 const $ = (id) => document.getElementById(id);
+
+function _isBadgeDisplayEnabled() {
+  return !!$('watchedBadgeEnabled')?.checked;
+}
+
+function _setBadgeControlsDisabled(disabled) {
+  const ids = [
+    'badgeText',
+    'badgeBgColor', 'badgeBgAlpha',
+    'badgeTextColor', 'badgeTextAlpha',
+    'badgeBorderColor', 'badgeBorderAlpha',
+  ];
+
+  for (const id of ids) {
+    const el = $(id);
+    if (el) el.disabled = !!disabled;
+  }
+
+  $('previewDock')?.classList.toggle('isDisabled', !!disabled);
+  $('badgePreview')?.classList.toggle('isDisabled', !!disabled);
+}
+
+function _syncBadgeOptionUI() {
+  _setBadgeControlsDisabled(!_isBadgeDisplayEnabled());
+}
 
 
 // -------------------- badge color helpers --------------------
@@ -165,8 +190,16 @@ function _updateBadgePreview() {
   const el = $('badgePreview');
   if (!el) return;
 
+  const enabled = _isBadgeDisplayEnabled();
   const text = $('badgeText')?.value?.trim() || 'WATCHED';
-  el.textContent = text;
+  el.textContent = enabled ? text : 'HIDDEN';
+
+  if (!enabled) {
+    el.style.backgroundColor = '';
+    el.style.color = '';
+    el.style.borderColor = '';
+    return;
+  }
 
   const bg = _getCssColorFromControls('badgeBgColor', 'badgeBgAlpha');
   const fg = _getCssColorFromControls('badgeTextColor', 'badgeTextAlpha');
@@ -483,15 +516,17 @@ async function saveSqliteUI() {
 
 
 async function loadUI() {
-  // Force always ON (also recover if an older version stored it as OFF).
-  await chrome.storage.local.set({ ...FORCED_MARKING_SETTINGS });
+  const s = await chrome.storage.local.get({ ...FORCED_MARKING_SETTINGS, ...DEFAULT_SETTINGS });
 
-  const s = await chrome.storage.local.get(DEFAULT_SETTINGS);
+  $('watchedBadgeEnabled').checked = !!(s.watchedEnabled && s.badgeEnabled);
   $('badgeText').value = String(s.badgeText ?? 'WATCHED');
+
   // Badge style controls
   _setControlsFromCssColor(s.badgeBgColor ?? DEFAULT_SETTINGS.badgeBgColor, { colorId: 'badgeBgColor', alphaId: 'badgeBgAlpha', labelId: 'badgeBgRgba' });
   _setControlsFromCssColor(s.badgeTextColor ?? DEFAULT_SETTINGS.badgeTextColor, { colorId: 'badgeTextColor', alphaId: 'badgeTextAlpha', labelId: 'badgeTextRgba' });
   _setControlsFromCssColor(s.badgeBorderColor ?? DEFAULT_SETTINGS.badgeBorderColor, { colorId: 'badgeBorderColor', alphaId: 'badgeBorderAlpha', labelId: 'badgeBorderRgba' });
+
+  _syncBadgeOptionUI();
   _updateBadgePreview();
 
   const ui = await chrome.storage.local.get(DEFAULT_UI);
@@ -515,12 +550,20 @@ function wireBadgeStyleUI() {
     a?.addEventListener('input', () => { _updateColorLabel(b); _updateBadgePreview(); });
   }
 
+  $('watchedBadgeEnabled')?.addEventListener('change', () => {
+    _syncBadgeOptionUI();
+    _updateBadgePreview();
+  });
+
   $('badgeText')?.addEventListener('input', () => _updateBadgePreview());
 }
 
 async function saveSettings() {
+  const badgeVisible = _isBadgeDisplayEnabled();
+
   await chrome.storage.local.set({
-    ...FORCED_MARKING_SETTINGS,
+    watchedEnabled: badgeVisible,
+    badgeEnabled: badgeVisible,
     badgeText: $('badgeText').value?.trim() || 'WATCHED',
 
     // Badge style
@@ -529,7 +572,9 @@ async function saveSettings() {
     badgeBorderColor: _getCssColorFromControls('badgeBorderColor', 'badgeBorderAlpha'),
   });
 
+  _syncBadgeOptionUI();
   _updateBadgePreview();
+
   await chrome.storage.local.set({
     historyIncludeShorts: $('historyIncludeShorts').checked,
   });

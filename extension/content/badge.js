@@ -138,11 +138,18 @@
 
   CS.applyWatched = function applyWatched(renderer, watched) {
     if (!renderer) return;
-    if (watched) {
-      renderer.classList.add('yt-dlp-watched');
+
+    if (!watched || !CS.settings.watchedEnabled) {
+      renderer.classList.remove('yt-dlp-watched');
+      CS.removeBadge(renderer);
+      return;
+    }
+
+    renderer.classList.add('yt-dlp-watched');
+
+    if (CS.settings.badgeEnabled) {
       CS.ensureBadge(renderer, CS.settings.badgeText);
     } else {
-      renderer.classList.remove('yt-dlp-watched');
       CS.removeBadge(renderer);
     }
   };

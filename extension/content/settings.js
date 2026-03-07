@@ -9,7 +9,6 @@
     badgeBorderColor: 'rgba(255, 255, 255, 0.6)',
   };
 
-  // Options UI removed toggles -> force ON
   CS.FORCED_MARKING_SETTINGS = {
     watchedEnabled: true,
     badgeEnabled: true,
@@ -18,20 +17,21 @@
   CS.settings = { ...CS.FORCED_MARKING_SETTINGS, ...CS.DEFAULT_SETTINGS };
 
   CS.loadSettings = async function loadSettings() {
-    try { await chrome.storage.local.set({ ...CS.FORCED_MARKING_SETTINGS }); } catch {}
-    const s = await chrome.storage.local.get(CS.DEFAULT_SETTINGS).catch(() => ({}));
+    const s = await chrome.storage.local
+      .get({ ...CS.FORCED_MARKING_SETTINGS, ...CS.DEFAULT_SETTINGS })
+      .catch(() => ({}));
     CS.settings = { ...CS.FORCED_MARKING_SETTINGS, ...CS.DEFAULT_SETTINGS, ...s };
   };
 
   function applySettingsPatch(changes) {
     for (const [k, v] of Object.entries(changes || {})) {
+      if (k === 'watchedEnabled') CS.settings.watchedEnabled = !!v.newValue;
+      if (k === 'badgeEnabled') CS.settings.badgeEnabled = !!v.newValue;
       if (k === 'badgeText') CS.settings.badgeText = v.newValue;
       if (k === 'badgeBgColor') CS.settings.badgeBgColor = v.newValue;
       if (k === 'badgeTextColor') CS.settings.badgeTextColor = v.newValue;
       if (k === 'badgeBorderColor') CS.settings.badgeBorderColor = v.newValue;
     }
-    CS.settings.watchedEnabled = true;
-    CS.settings.badgeEnabled = true;
   }
 
   CS.setupSettingsListener = function setupSettingsListener() {
@@ -39,11 +39,27 @@
       if (area !== 'local') return;
       applySettingsPatch(changes);
 
-      // If badge styling changed, re-apply on visible watched renderers.
+      // If watched UI visibility or styling changed, re-apply immediately on visible renderers.
       try {
-        if ((changes.badgeText || changes.badgeBgColor || changes.badgeTextColor || changes.badgeBorderColor) && CS.io) {
-          for (const r of CS.visibleRenderers) {
-            if (r?.classList?.contains('yt-dlp-watched')) CS.ensureBadge?.(r, CS.settings.badgeText);
+        if (
+          changes.watchedEnabled ||
+          changes.badgeEnabled ||
+          changes.badgeText ||
+          changes.badgeBgColor ||
+          changes.badgeTextColor ||
+          changes.badgeBorderColor
+        ) {
+          for (const r of CS.visibleRenderers || []) {
+            if (!(r instanceof Element) || !r.isConnected) continue;
+
+            if (!CS.settings.watchedEnabled) {
+              CS.applyWatched?.(r, false);
+              continue;
+            }
+
+            if (r.classList?.contains('yt-dlp-watched')) {
+              CS.applyWatched?.(r, true);
+            }
           }
         }
       } catch {}
